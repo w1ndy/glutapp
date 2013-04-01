@@ -1,5 +1,9 @@
 //
 // BaseType.h
+// ----------
+// Base types for libraries (e.g. Color, Vector, etc).
+//
+// Copyright (C) 2013, skies457.
 //
 
 #ifndef __BASETYPE_H__

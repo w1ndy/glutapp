@@ -1,5 +1,9 @@
 //
 // GlutApp.h
+// ---------
+// A C++ wrapper for GL and GLUT.
+//
+// Copyright (c) 2013, skies457.
 //
 
 #ifndef __GLUTAPP_H__
