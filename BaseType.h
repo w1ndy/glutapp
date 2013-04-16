@@ -9,7 +9,10 @@
 #ifndef __BASETYPE_H__
 #define __BASETYPE_H__
 
+#include <stdexcept>
+#include <exception>
 #include <cmath>
+#include <cstring>
 
 #ifdef BYTE
 #undef BYTE
@@ -75,6 +78,9 @@ public:
 	Color(float _r, float _g, float _b, float _a = 1.0f)
 		: r(_r), g(_g), b(_b), a(_a) {};
 
+	inline void set(float red, float green, float blue, float alpha = 1.0f) {
+		r = red, g = green, b = blue, a = alpha;
+	}
 	inline float getRed() const { return r; }
 	inline float getGreen() const { return g; }
 	inline float getBlue() const { return b; }
@@ -84,6 +90,19 @@ public:
 	inline BYTE getGreenByte() const { return FLOAT_TO_BYTE(g); }
 	inline BYTE getBlueByte() const { return FLOAT_TO_BYTE(b); }
 	inline BYTE getAlphaByte() const { return FLOAT_TO_BYTE(a); }
+
+	inline void setARGB(ULONG argb) {
+		r = ARGB_TO_RED_FLOAT(argb);
+		g = ARGB_TO_GREEN_FLOAT(argb);
+		b = ARGB_TO_BLUE_FLOAT(argb);
+		a = ARGB_TO_ALPHA_FLOAT(argb);
+	}
+
+	inline void setRGB(ULONG rgb) {
+		r = RGB_TO_RED_FLOAT(rgb);
+		g = RGB_TO_GREEN_FLOAT(rgb);
+		b = RGB_TO_BLUE_FLOAT(rgb);
+	}
 
 	inline ULONG getARGB() const { return COMPONENT_TO_ARGB(r, g, b, a); }
 	inline ULONG getRGB() const { return COMPONENT_TO_RGB(r, g, b); }
@@ -114,10 +133,18 @@ public:
 	};
 
 public:
-	Vector()
-		: x(0.0f), y(0.0f), z(0.0f), w(1.0f) {};
+	enum VectorType
+	{
+		VectorType_Direction,
+		VectorType_Position
+	};
+public:
 	Vector(float _x, float _y, float _z, float _w = 1.0f)
-		: x(_x), y(_y), z(_z), w(_w) {};
+		: x(_x), y(_y), z(_z), w(_w) {}
+
+	inline void set(float _x, float _y, float _z, float _w = 1.0f) {
+		x = _x, y = _y, z = _z, w = _w;
+	}
 
 	inline float length() const {
 		return sqrt(x * x + y * y + z * z);
@@ -170,7 +197,7 @@ public:
 				x * v.y - y * v.x);
 	}
 
-	Vector& operator*(const Vector &v) {
+	Vector& operator*=(const Vector &v) {
 		float 	xt = y * v.z - z * v.y,
 				yt = z * v.x - x * v.z,
 				zt = x * v.y - y * v.x;
@@ -178,17 +205,149 @@ public:
 		return *this;
 	}
 
-	const Vector operator*(float k) const {
-		return Vector(x * k, y * k, z * k);
-	}
-
-	Vector& operator*(float k) {
+	Vector& operator*=(float k) {
 		x *= k, y *= k, z *= k;
 		return *this;
 	}
 
-	friend const Vector operator*(float k, const Vector &v) const {
+	friend const Vector operator*(float k, const Vector &v) {
 		return Vector(v.x * k, v.y * k, v.z * k);
+	}
+};
+
+class Matrix
+{
+private:
+	union {
+		float _data[4][4];
+		struct {
+			float a1, a2, a3, a4;
+			float b1, b2, b3, b4;
+			float c1, c2, c3, c4;
+			float d1, d2, d3, d4;
+		};
+	};
+
+public:
+	Matrix()
+		: a1(0.0f), a2(0.0f), a3(0.0f), a4(0.0f),
+		  b1(0.0f), b2(0.0f), b3(0.0f), b4(0.0f),
+		  c1(0.0f), c2(0.0f), c3(0.0f), c4(0.0f),
+		  d1(0.0f), d2(0.0f), d3(0.0f), d4(0.0f) {};
+	Matrix(	float _a1, float _a2, float _a3, float _a4,
+			float _b1, float _b2, float _b3, float _b4,
+			float _c1, float _c2, float _c3, float _c4,
+			float _d1, float _d2, float _d3, float _d4)
+		: a1(_a1), a2(_a2), a3(_a3), a4(_a4),
+		  b1(_b1), b2(_b2), b3(_b3), b4(_b4),
+		  c1(_c1), c2(_c2), c3(_c3), c4(_c4),
+		  d1(_d1), d2(_d2), d3(_d3), d4(_d4) {};
+
+	inline float *raw() const {
+		return (float *)_data;
+	}
+
+	float &operator()(unsigned int i, unsigned int j) {
+		if(i >= 4 || j >= 4)
+			throw std::runtime_error("Out of range.");
+		return _data[i][j];
+	}
+	const float &operator()(unsigned int i, unsigned int j) const {
+		if(i >= 4 || j >= 4)
+			throw std::runtime_error("Out of range.");
+		return _data[i][j];
+	}
+
+	bool operator==(const Matrix &m) const {
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				if(!FLOAT_EQUAL(_data[i][j], m._data[i][j]))
+					return false;
+			}
+		}
+		return true;
+	}
+	bool operator!=(const Matrix &m) const {
+		return !(*this == m);
+	}
+
+	Matrix &operator=(const Matrix &m) {
+		if(this == &m) return *this;
+		memcpy(_data, m._data, sizeof(_data));
+		return *this;
+	}
+
+	const Matrix operator+(const Matrix &m) const {
+		Matrix rm;
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				rm(i, j) = _data[i][j] + m(i, j);
+			}
+		}
+		return rm;
+	}
+
+	Matrix &operator+=(const Matrix &m) {
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				_data[i][j] += m(i, j);
+			}
+		}
+		return *this;
+	}
+
+	const Matrix operator*(const Matrix &m) const {
+		Matrix rm;
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				for(int k = 0; k < 4; k++) {
+					rm(i, j) += _data[i][k] * m(k, j);
+				}
+			}
+		}
+		return rm;
+	}
+
+	Matrix &operator*=(const Matrix &m) {
+		Matrix rm = *this;
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				_data[i][j] = 0;
+				for(int k = 0; k < 4; k++) {
+					_data[i][j] += rm(i, k) * m(k, j);
+				}
+			}
+		}
+		return *this;
+	}
+
+	friend const Vector operator*(const Vector &v, const Matrix &m) {
+		Vector rv(
+				m.a1 * v.x + m.a2 * v.y + m.a3 * v.z + m.a4 * v.w,
+				m.b1 * v.x + m.b2 * v.y + m.b3 * v.z + m.b4 * v.w,
+				m.c1 * v.x + m.c2 * v.y + m.c3 * v.z + m.c4 * v.w,
+				m.d1 * v.x + m.d2 * v.y + m.d3 * v.z + m.d4 * v.w);
+		if(!FLOAT_ZERO(rv.w)) {
+			rv.x /= rv.w, rv.y /= rv.w, rv.z /= rv.w;
+		}
+		rv.w = 1.0f;
+		return rv;
+	}
+
+	static const Matrix buildScaleMatrix(float s) {
+		return Matrix(
+				s, 0.0f, 0.0f, 0.0f,
+				0.0f, s, 0.0f, 0.0f,
+				0.0f, 0.0f, s, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f);
+	}
+
+	static const Matrix buildTranslateMatrix(float dx, float dy, float dz) {
+		return Matrix(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				  dx,   dy,   dz, 1.0f);
 	}
 };
 

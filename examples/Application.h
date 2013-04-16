@@ -7,7 +7,7 @@
 // Copyright (c) 2013, skies457.
 //
 
-#include "GlutApp.h"
+#include "../GlutApp.h"
 #include <iostream>
 #include <memory>
 using namespace std;
@@ -27,6 +27,10 @@ public:
 		glRectf(-10.0f, 10.0f, 10.0f, -10.0f);
 	}
 	void run() { core->run(); }
+
+	const char *name() const {
+		return "Minimal GLUT Application";
+	}
 };
 
 Application::Application()
@@ -39,10 +43,3 @@ Application::~Application()
 {
 }
 
-int main()
-{
-	Application app;
-	cout << "Application initialized." << endl;
-	app.run();
-	return 0;
-}

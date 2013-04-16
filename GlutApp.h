@@ -28,6 +28,10 @@ public:
 	virtual void onResize(int width, int height);
 	virtual void onRender(unsigned int timeElapsed) = 0;
 
+	virtual const char *name() const {
+		return "<Default GlutListener Name>";
+	}
+
 protected:
 	void updatePerspectiveView(int width, int height,
 			double fovy = 90.0);
@@ -149,8 +153,8 @@ private:
 	}
 
 private:
-	static Ptr _appInst;
-	static DefaultGlutListener _defaultListener;
+	static Ptr					_appInst;
+	static DefaultGlutListener 	_defaultListener;
 
 	GlutStartupParams 	_params;
 	GlutListener*		_listener;
