@@ -243,8 +243,27 @@ public:
 		  c1(_c1), c2(_c2), c3(_c3), c4(_c4),
 		  d1(_d1), d2(_d2), d3(_d3), d4(_d4) {};
 
+	void inverse();
+	void inverse(const Matrix &m);
+
 	inline float *raw() const {
 		return (float *)_data;
+	}
+
+	inline void transpose() {
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j <= i; j++) {
+				std::swap(_data[i][j], _data[j][i]);
+			}
+		}
+	}
+
+	inline void transpose(const Matrix &m) {
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				_data[i][j] = m(j, i);
+			}
+		}
 	}
 
 	float &operator()(unsigned int i, unsigned int j) {
@@ -291,6 +310,25 @@ public:
 		for(int i = 0; i < 4; i++) {
 			for(int j = 0; j < 4; j++) {
 				_data[i][j] += m(i, j);
+			}
+		}
+		return *this;
+	}
+
+	const Matrix operator*(float f) const {
+		Matrix rm;
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				rm(i, j) = _data[i][j] * f;
+			}
+		}
+		return rm;
+	}
+
+	Matrix &operator*=(float f) {
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 4; j++) {
+				_data[i][j] *= f;
 			}
 		}
 		return *this;
@@ -348,6 +386,15 @@ public:
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				  dx,   dy,   dz, 1.0f);
+	}
+
+	static const Matrix buildRotationMatrixAroundX(float angle) {
+		float fc = cosf(angle), fs = sinf(angle);
+		return Matrix(
+				1.0f,	0.0f, 	0.0f,	0.0f,
+				0.0f,	fc, 	-fs, 	0.0f,
+				0.0f, 	fs, 	fc, 	0.0f,
+				0.0f, 	0.0f,	0.0f, 	1.0f);
 	}
 };
 
