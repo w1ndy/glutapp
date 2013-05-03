@@ -9,10 +9,15 @@
 #ifndef __BASETYPE_H__
 #define __BASETYPE_H__
 
+#include <iostream>
 #include <stdexcept>
 #include <exception>
 #include <cmath>
 #include <cstring>
+
+#ifndef PI
+#define PI	3.1415926535897932
+#endif // PI
 
 #ifdef BYTE
 #undef BYTE
@@ -267,13 +272,20 @@ public:
 	}
 
 	float &operator()(unsigned int i, unsigned int j) {
-		if(i >= 4 || j >= 4)
-			throw std::runtime_error("Out of range.");
+		if(i >= 4 || j >= 4) {
+			std::cerr << "Matrix subscript (" << i << "," << j <<
+					") out of range, return (0,0) as default." << std::endl;
+			return _data[0][0];
+		}
 		return _data[i][j];
 	}
-	const float &operator()(unsigned int i, unsigned int j) const {
-		if(i >= 4 || j >= 4)
-			throw std::runtime_error("Out of range.");
+
+	const float operator()(unsigned int i, unsigned int j) const {
+		if(i >= 4 || j >= 4) {
+			std::cerr << "Matrix subscript (" << i << "," << j <<
+					") out of range, return (0,0) as default." << std::endl;
+			return _data[0][0];
+		}
 		return _data[i][j];
 	}
 
@@ -372,29 +384,70 @@ public:
 		return rv;
 	}
 
+	static const Matrix buildIdentityMatrix() {
+		return Matrix(
+				1.0f,	0.0f,	0.0f,	0.0f,
+				0.0f,	1.0f,	0.0f,	0.0f,
+				0.0f,	0.0f,	1.0f,	0.0f,
+				0.0f,	0.0f,	0.0f,	1.0f);
+	}
+
 	static const Matrix buildScaleMatrix(float s) {
 		return Matrix(
-				s, 0.0f, 0.0f, 0.0f,
-				0.0f, s, 0.0f, 0.0f,
-				0.0f, 0.0f, s, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f);
+				s,		0.0f,	0.0f,	0.0f,
+				0.0f,	s,		0.0f,	0.0f,
+				0.0f,	0.0f,	s,		0.0f,
+				0.0f,	0.0f,	0.0f,	1.0f);
 	}
 
 	static const Matrix buildTranslateMatrix(float dx, float dy, float dz) {
 		return Matrix(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				  dx,   dy,   dz, 1.0f);
+				1.0f,	0.0f,	0.0f,	0.0f,
+				0.0f,	1.0f,	0.0f,	0.0f,
+				0.0f,	0.0f,	1.0f,	0.0f,
+				dx,		dy,		dz,		1.0f);
 	}
 
-	static const Matrix buildRotationMatrixAroundX(float angle) {
-		float fc = cosf(angle), fs = sinf(angle);
+	static const Matrix buildRotationMatrixAroundX(float radius) {
+		float fc = cosf(radius), fs = sinf(radius);
 		return Matrix(
 				1.0f,	0.0f, 	0.0f,	0.0f,
 				0.0f,	fc, 	-fs, 	0.0f,
 				0.0f, 	fs, 	fc, 	0.0f,
 				0.0f, 	0.0f,	0.0f, 	1.0f);
+	}
+
+	static const Matrix buildRotationMatrixAroundY(float radius) {
+		float fc = cosf(radius), fs = sinf(radius);
+		return Matrix(
+				fc,		0.0f,	-fs,	0.0f,
+				0.0f,	1.0f,	0.0f,	0.0f,
+				fs,		0.0f,	fc,		0.0f,
+				0.0f,	0.0f,	0.0f,	1.0f);
+	}
+
+	static const Matrix buildRotationMatrixAroundZ(float radius) {
+		float fc = cosf(radius), fs = sinf(radius);
+		return Matrix(
+				fc,		-fs,	0.0f,	0.0f,
+				fs,		fc,		0.0f,	0.0f,
+				0.0f,	0.0f,	1.0f,	0.0f,
+				0.0f,	0.0f,	0.0f,	1.0f);
+	}
+
+	static const Matrix buildRotationMatrix(const Vector &v, float radius) {
+		float fc = cosf(radius), fs = sinf(radius), d = 1.0f - fc;
+		float xfs = v.x * fs, yfs = v.y * fs, zfs = v.z * fs;
+
+		return Matrix(
+				v.x * v.x * d + fc,		v.x * v.y * d + zfs,	v.x * v.z * d - yfs,	0.0f,
+				v.y * v.x * d - zfs,	v.y * v.y * d + fc,		v.y * v.z * d + xfs,	0.0f,
+				v.z * v.x * d + yfs,	v.z * v.y * d - xfs,	v.z * v.z * d + fc,		0.0f,
+				0.0f,					0.0f,					0.0f,					1.0f);
+		/*
+				 *	x*x*d+cos(a)	x*y*d-z*sin(a)	x*z*d+y*sin(a)	0
+				 *	y*x*d+z*sin(a)	y*y*d+cos(a)	y*z*d-x*sin(a)	0
+				 *	z*x*d-y*sin(a)	z*y*d+x*sin(a)	z*z*d+cos(a)	0 */
 	}
 };
 
