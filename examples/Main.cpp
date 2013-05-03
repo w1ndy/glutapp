@@ -7,6 +7,7 @@
 //
 
 #include "Application.h"
+#include "Perspective.h"
 
 template<class T>
 void invoke() {

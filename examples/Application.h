@@ -26,8 +26,8 @@ public:
 
 	// Rendering call-back function.
 	void onRender(unsigned int timeElapsed) {
-		glColor3f(1.0f, 1.0f, 1.0f);
-		glRectf(-10.0f, 10.0f, 10.0f, -10.0f);
+		Color::Green.apply();
+		glRectf(-30.0f, 30.0f, 30.0f, -30.0f);
 	}
 
 	void run() { core->run(); }

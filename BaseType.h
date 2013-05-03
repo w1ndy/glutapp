@@ -9,6 +9,12 @@
 #ifndef __BASETYPE_H__
 #define __BASETYPE_H__
 
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
+#include <GL/freeglut.h>
+#endif // __APPLE__
+
 #include <iostream>
 #include <stdexcept>
 #include <exception>
@@ -111,6 +117,7 @@ public:
 
 	inline ULONG getARGB() const { return COMPONENT_TO_ARGB(r, g, b, a); }
 	inline ULONG getRGB() const { return COMPONENT_TO_RGB(r, g, b); }
+	inline void apply() const { glColor4f(r, g, b, a); }
 
 public:
 	static Color Red;

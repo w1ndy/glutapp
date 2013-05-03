@@ -18,8 +18,11 @@ private:
 	GlutApp::Ptr core;
 
 public:
-	Perspective();
-	~Perspective();
+	Perspective() {
+		core = GlutApp::construct(GlutStartupParams::construct(this));
+	};
+
+	~Perspective() {};
 
 	// View changed event call-back function.
 	void onResize(int width, int height) {
@@ -29,6 +32,8 @@ public:
 	// Rendering call-back function.
 	void onRender(unsigned int timeElapsed) {
 		glColor3f(1.0f, 1.0f, 1.0f);
+		glLoadMatrixf(Matrix::buildTranslateMatrix(0.0f, 0.0f, -5.0f).raw());
+		glutWireCube(1.0);
 		//glRectf(-10.0f, 10.0f, 10.0f, -10.0f);
 	}
 
