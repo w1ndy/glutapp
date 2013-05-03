@@ -18,65 +18,8 @@
 #include <memory>
 #include <chrono>
 #include "BaseType.h"
-
-class GlutListener
-{
-public:
-	virtual ~GlutListener() {};
-	virtual void onInit() {};
-	virtual void onIdle() {};
-	virtual void onResize(int width, int height);
-	virtual void onRender(unsigned int timeElapsed) = 0;
-
-	virtual const char *name() const {
-		return "<Default GlutListener Name>";
-	}
-
-protected:
-	void updatePerspectiveView(int width, int height,
-			double fovy = 90.0);
-	void updateOrthoView(int width, int height,
-			double left = -1.0, double right = 1.0,
-			double bottom = -1.0, double top = 1.0,
-			double near = -1.0, double far = 1.0);
-};
-
-class DefaultGlutListener : public GlutListener
-{
-public:
-	void onRender(unsigned int timeElapsed) {};
-};
-
-class GlutCamera
-{
-public:
-	virtual ~GlutCamera() {};
-	virtual void walk(float unit) 		= 0;
-	virtual void fly(float unit) 		= 0;
-	virtual void strafe(float unit)		= 0;
-	virtual void roll(float radius)		= 0;
-	virtual void yaw(float radius)		= 0;
-	virtual void pitch(float radius)	= 0;
-	virtual void update()				= 0;
-};
-
-class DefaultGlutCamera : public GlutCamera
-{
-private:
-	Vector _forward, _up, _right, _loc;
-	const float UnitScale = 10.0f;
-
-public:
-	DefaultGlutCamera();
-	~DefaultGlutCamera() {};
-	void walk(float unit);
-	void fly(float unit);
-	void strafe(float unit);
-	void roll(float radius);
-	void yaw(float radius);
-	void pitch(float radius);
-	void update();
-};
+#include "GlutCamera.h"
+#include "GlutListener.h"
 
 struct GlutStartupParams
 {
@@ -111,8 +54,7 @@ struct GlutStartupParams
 			bool accumBuffer = false,				// Enable Accumulation Buffer
 			bool indexedColor = false,				// Enable Indexed Color Mode
 			int argc = 0,							// Additional Parameters Num
-			char **argv = NULL						// Additional Parameters
-			);
+			char **argv = NULL);					// Additional Parameters
 };
 
 class GlutApp

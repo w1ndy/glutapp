@@ -5,33 +5,6 @@
 std::shared_ptr<GlutApp> GlutApp::_appInst;
 DefaultGlutListener GlutApp::_defaultListener;
 
-void GlutListener::onResize(int width, int height)
-{
-	updateOrthoView(width, height,
-			-(double)width / 2, (double)width / 2,
-			-(double)height / 2, (double)height / 2);
-}
-
-void GlutListener::updatePerspectiveView(int width, int height, double fovy)
-{
-	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(fovy, (double)width / height, 0.1, 1000.0);
-	glMatrixMode(GL_MODELVIEW);
-}
-
-void GlutListener::updateOrthoView(int width, int height,
-		double left, double right, double bottom, double top,
-		double near, double far)
-{
-	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(left, right, bottom, top, near, far);
-	glMatrixMode(GL_MODELVIEW);
-}
-
 const GlutStartupParams GlutStartupParams::construct(GlutListener *listener,
 		const char *title, unsigned int width, unsigned int height,
 		unsigned int x, unsigned int y, Color clearColor,
@@ -59,43 +32,6 @@ const GlutStartupParams GlutStartupParams::construct(GlutListener *listener,
 	p.argv = (argv == NULL) ? null_argv : argv;
 
 	return p;
-}
-
-DefaultGlutCamera::DefaultGlutCamera()
-	: _forward(0.0f, 0.0f, -1.0f, 0.0f),
-	  _up(0.0f, 1.0f, 0.0f, 0.0f),
-	  _right(1.0f, 0.0f, 0.0f, 0.0f),
-	  _loc(0.0f, 0.0f, 0.0f, 0.0f) {};
-
-void DefaultGlutCamera::walk(float unit)
-{
-	_loc += unit * UnitScale * _forward;
-}
-
-void DefaultGlutCamera::strafe(float unit)
-{
-	_loc += unit * UnitScale * _right;
-}
-
-void DefaultGlutCamera::fly(float unit)
-{
-	_loc += unit * UnitScale * _up;
-}
-
-void DefaultGlutCamera::pitch(float radius)
-{
-}
-
-void DefaultGlutCamera::yaw(float radius)
-{
-}
-
-void DefaultGlutCamera::roll(float radius)
-{
-}
-
-void DefaultGlutCamera::update()
-{
 }
 
 GlutApp::GlutApp()
