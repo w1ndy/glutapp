@@ -1,13 +1,16 @@
 //
-// Application.cpp
-// ---------------
-// This is a simple example using GlutApp wrapper. Main program primarily
-// declared in class Application, as well as a listener for GLUT events.
+// Application.h
+// -------------
+// This is a minimal example class using GlutApp wrapper.
 //
 // Copyright (c) 2013, skies457.
 //
 
+#ifndef __APPLICATION_H__
+#define __APPLICATION_H__
+
 #include "../GlutApp.h"
+#include "../BaseType.h"
 #include <iostream>
 #include <memory>
 using namespace std;
@@ -26,6 +29,7 @@ public:
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glRectf(-10.0f, 10.0f, 10.0f, -10.0f);
 	}
+
 	void run() { core->run(); }
 
 	const char *name() const {
@@ -43,3 +47,4 @@ Application::~Application()
 {
 }
 
+#endif // __APPLICATION_H__
