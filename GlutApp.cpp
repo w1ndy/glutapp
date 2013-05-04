@@ -35,8 +35,8 @@ const GlutStartupParams GlutStartupParams::construct(GlutListener *listener,
 }
 
 GlutApp::GlutApp()
-	: _listener(NULL), _frameCount(0),
-	  _clearFlag(0), _timeBegin(std::chrono::high_resolution_clock::now())
+	:  _currentCam(0), _frameCount(0), _clearFlag(0),
+	  _timeBegin(std::chrono::high_resolution_clock::now())
 {
 }
 
@@ -51,17 +51,18 @@ GlutApp::Ptr GlutApp::construct(const GlutStartupParams &params)
 	}
 
 	_appInst.reset(new GlutApp());
-	_appInst->initialize(params);
+	_appInst->_initialize(params);
 
 	return _appInst;
 }
 
-void GlutApp::initialize(const GlutStartupParams &params)
+void GlutApp::_initialize(const GlutStartupParams &params)
 {
 	int flag = 0;
 
 	glutInit(&(params.argc), params.argv);
-	_listener = params.Listener;
+	installListener(params.Listener);
+	//_listener = params.Listener;
 
 	if(params.isDoubleBuffered)
 		flag |= GLUT_DOUBLE;
@@ -101,33 +102,42 @@ void GlutApp::initialize(const GlutStartupParams &params)
 			params.ClearColor.g,
 			params.ClearColor.b,
 			params.ClearColor.a);
-	getListener()->onInit();
 	_params = params;
+	_dispatchInitEvent();
 }
 
-void GlutApp::dispatchRenderEvent()
+void GlutApp::_dispatchInitEvent()
 {
-	// update camera, etc.
+	for(GlutListener *l : _listener)
+		l->onInit();
+}
+
+void GlutApp::_dispatchRenderEvent()
+{
+	if(_currentCam) _currentCam->update();
+
 	_frameCount++;
 	glClear(_clearFlag);
-	unsigned int duration = getElapsedTime(_timeBegin);
-	getListener()->onRender(duration);
+	unsigned int duration = _getElapsedTime(_timeBegin);
+	for(GlutListener *l : _listener)
+		l->onRender(duration);
 	if(_params.isDoubleBuffered)
 		glutSwapBuffers();
 	else
 		glFlush();
 }
 
-void GlutApp::dispatchReshapeEvent(int w, int h)
+void GlutApp::_dispatchReshapeEvent(int w, int h)
 {
-	getListener()->onResize(w, h);
+	for(GlutListener *l : _listener)
+		l->onResize(w, h);
 }
 
-void GlutApp::dispatchIdleEvent()
+void GlutApp::_dispatchIdleEvent()
 {
 	static auto lastTime = _timeBegin;
 	int delta;
-	if((delta = getElapsedTime(lastTime)) > 1000) {
+	if((delta = _getElapsedTime(lastTime)) > 1000) {
 		float fps = (float)(_frameCount * 1000) / delta;
 		_frameCount = 0;
 		lastTime = std::chrono::high_resolution_clock::now();
@@ -137,6 +147,7 @@ void GlutApp::dispatchIdleEvent()
 				_params.Title, fps);
 		glutSetWindowTitle(fpsInfo);
 	}
-	getListener()->onIdle();
+	for(GlutListener *l : _listener)
+		l->onIdle();
 	glutPostRedisplay();
 }

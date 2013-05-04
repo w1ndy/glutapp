@@ -15,8 +15,13 @@
 #include <GL/freeglut.h>
 #endif // __APPLE__
 
+#include <iostream>
 #include <memory>
 #include <chrono>
+#include <vector>
+#include <map>
+#include <algorithm>
+
 #include "BaseType.h"
 #include "GlutCamera.h"
 #include "GlutListener.h"
@@ -71,24 +76,101 @@ public:
 		glutMainLoop();
 	}
 
-	inline void setListener(GlutListener *newListener) {
-		_listener = newListener;
+	inline void installListener(GlutListener *l) {
+		_listener.push_back(l);
 	}
 
-	inline GlutListener *getListener() const {
-		if(_listener == NULL) return &_defaultListener;
-		return _listener;
+	inline bool uninstallListener(GlutListener *l) {
+		return _removeElementFromContainer(_listener, l,
+				"Listener to be uninstalled does not exist.");
+	}
+
+	inline void uninstallAllListener() {
+		_listener.clear();
+	}
+
+	inline void installCamera(GlutCamera *c, const std::string &name = "DefaultCamera") {
+		_camera[name] = c;
+		if(!_currentCam) _currentCam = c;
+	}
+
+	inline bool uninstallCamera(const std::string &name) {
+		auto i = _camera.find(name);
+		if(i == _camera.end()) {
+			std::cerr << "Camera to be uninstalled does not exist." << std::endl;
+			return false;
+		} else {
+			if(i->second == _currentCam) {
+				i = _camera.erase(i);
+				if(i == _camera.end()) {
+					_currentCam = NULL;
+				} else {
+					_currentCam = i->second;
+				}
+			} else {
+				_camera.erase(i);
+			}
+		}
+		return true;
+	}
+
+	inline void uninstallAllCamera() {
+		_camera.clear();
+		_currentCam = NULL;
+	}
+
+	inline GlutCamera *getCameraByName(const std::string &name) {
+		auto i = _camera.find(name);
+		if(i == _camera.end()) {
+			return NULL;
+		} else {
+			return i->second;
+		}
+	}
+
+	inline GlutCamera *getCurrentCamera() {
+		return _currentCam;
+	}
+
+	inline bool switchCamera(const std::string &name) {
+		auto i = _camera.find(name);
+		if(i == _camera.end()) {
+			return false;
+		} else {
+			_currentCam = i->second;
+		}
+		return true;
+	}
+
+	inline bool switchToFirstCamera() {
+		if(_camera.empty()) return false;
+		_currentCam = _camera.begin()->second;
+		return true;
 	}
 
 private:
 	GlutApp();
-	void initialize(const GlutStartupParams &params);
-	void dispatchRenderEvent();
-	void dispatchReshapeEvent(int w, int h);
-	void dispatchIdleEvent();
 
-	inline unsigned int getElapsedTime(
-			const std::chrono::high_resolution_clock::time_point &origin) {
+	void _initialize(const GlutStartupParams &params);
+	void _dispatchInitEvent();
+	void _dispatchRenderEvent();
+	void _dispatchReshapeEvent(int w, int h);
+	void _dispatchIdleEvent();
+	//void _dispatchCameraChangedEvent();
+
+	template<typename T>
+	inline bool _removeElementFromContainer(std::vector<T> &container, T &elem, const char *errMsg) {
+		auto i = find(container.begin(), container.end(), elem);
+		if(i == container.end()) {
+			std::cerr << errMsg << std::endl;
+			return false;
+		} else {
+			container.erase(i);
+		}
+		return true;
+	}
+
+	inline unsigned int _getElapsedTime(const std::chrono::high_resolution_clock::time_point &origin) {
 		return std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::high_resolution_clock::now() - origin
 				).count();
@@ -98,9 +180,11 @@ private:
 	static Ptr					_appInst;
 	static DefaultGlutListener 	_defaultListener;
 
-	GlutStartupParams 	_params;
-	GlutListener*		_listener;
+	GlutStartupParams 					_params;
+	std::vector<GlutListener*>			_listener;
+	std::map<std::string, GlutCamera*>	_camera;
 
+	GlutCamera*	_currentCam;
 	unsigned 	_frameCount;
 	unsigned	_clearFlag;
 
@@ -110,17 +194,17 @@ public:
 	// Forward hooks.
 	static void _render_callback() {
 		if(_appInst.get())
-			_appInst->dispatchRenderEvent();
+			_appInst->_dispatchRenderEvent();
 	}
 
 	static void _reshape_callback(int w, int h) {
 		if(_appInst.get())
-			_appInst->dispatchReshapeEvent(w, h);
+			_appInst->_dispatchReshapeEvent(w, h);
 	}
 
 	static void _idle_callback() {
 		if(_appInst.get())
-			_appInst->dispatchIdleEvent();
+			_appInst->_dispatchIdleEvent();
 	}
 };
 
