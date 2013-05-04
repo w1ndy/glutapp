@@ -26,6 +26,11 @@ public:
 
 	// Rendering call-back function.
 	void onRender(unsigned int timeElapsed) {
+		glDisable(GL_CULL_FACE);
+		//Matrix::buildTranslateMatrix(100.0f, 100.0f, 0.0f).apply();
+		glLoadIdentity();
+		Matrix::buildTranslationMatrix(0, 0, -1.0f).apply();
+		//Matrix::buildRotationMatrixAroundX(PI / 6).apply();
 		Color::Green.apply();
 		glRectf(-30.0f, 30.0f, 30.0f, -30.0f);
 	}

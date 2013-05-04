@@ -18,6 +18,6 @@ void invoke() {
 
 int main()
 {
-	invoke<Application>();
+	invoke<Perspective>();
 	return 0;
 }

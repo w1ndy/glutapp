@@ -16,10 +16,15 @@ class Perspective : public Application
 {
 private:
 	GlutApp::Ptr core;
+	GlutCamera camera;
 
 public:
 	Perspective() {
 		core = GlutApp::construct(GlutStartupParams::construct(this));
+		core->installCamera(&camera);
+		camera.pitch(PI / 4);
+		camera.yaw(PI / 4);
+		camera.walk(-30.0f);
 	};
 
 	~Perspective() {};
@@ -32,9 +37,20 @@ public:
 	// Rendering call-back function.
 	void onRender(unsigned int timeElapsed) {
 		glColor3f(1.0f, 1.0f, 1.0f);
-		glLoadMatrixf(Matrix::buildTranslateMatrix(0.0f, 0.0f, -5.0f).raw());
-		glutWireCube(1.0);
-		//glRectf(-10.0f, 10.0f, 10.0f, -10.0f);
+		glutWireTeapot(10.0f);
+
+		// Draw x (red), y (green), z (blue) axis.
+		glBegin(GL_LINES);
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(-100.0f, 0.0f, 0.0f);
+			glVertex3f(100.0f, 0.0f, 0.0f);
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(0.0f, -100.0f, 0.0f);
+			glVertex3f(0.0f, 100.0f, 0.0f);
+			glColor3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(0.0f, 0.0f, -100.0f);
+			glVertex3f(0.0f, 0.0f, 100.0f);
+		glEnd();
 	}
 
 	void run() { core->run(); }
