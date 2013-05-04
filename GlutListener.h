@@ -20,7 +20,7 @@ public:
 
 protected:
 	void updatePerspectiveView(int width, int height,
-			double fovy = 90.0);
+			double fovy = 60.0);
 	void updateOrthoView(int width, int height,
 			double left = -1.0, double right = 1.0,
 			double bottom = -1.0, double top = 1.0,

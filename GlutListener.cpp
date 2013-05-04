@@ -19,10 +19,10 @@ void GlutListener::onResize(int width, int height)
 
 void GlutListener::updatePerspectiveView(int width, int height, double fovy)
 {
-	glViewport(0, 0, width, height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(fovy, (double)width / height, 0.1, 1000.0);
+	glViewport(0, 0, width, height);
+	gluPerspective(fovy, (double)width / (float)height, 0.1, 1000.0);
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -30,9 +30,9 @@ void GlutListener::updateOrthoView(int width, int height,
 		double left, double right, double bottom, double top,
 		double near, double far)
 {
-	glViewport(0, 0, width, height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+	glViewport(0, 0, width, height);
 	glOrtho(left, right, bottom, top, near, far);
 	glMatrixMode(GL_MODELVIEW);
 }
