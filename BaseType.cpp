@@ -6,6 +6,11 @@ Color Color::Blue(0.0f, 0.0f, 1.0f, 1.0f);
 Color Color::White(1.0f, 1.0f, 1.0f, 1.0f);
 Color Color::Black(0.0f, 0.0f, 0.0f, 1.0f);
 
+Vector &Vector::operator*=(const Matrix &m) {
+	*this = *this * m;
+	return *this;
+}
+
 void Matrix::inverse()
 {
     inverse(*this);
@@ -17,41 +22,44 @@ void Matrix::inverse(const Matrix &m)
     Matrix cof;
     cof.transpose(*this);
 
-    factor[0] = cof.c3 * cof.d4 - cof.c4 * cof.d3;
-    factor[1] = cof.c2 * cof.d4 - cof.c4 * cof.d2;
-    factor[2] = cof.c2 * cof.d3 - cof.c3 * cof.d2;
-    factor[3] = cof.c1 * cof.d4 - cof.c4 * cof.d1;
-    factor[4] = cof.c3 * cof.d1 - cof.c1 * cof.d3;
-    factor[5] = cof.c1 * cof.d2 - cof.c2 * cof.d1;
+    factor[0] = cof(2,2) * cof(3,3) - cof(2,3) * cof(3,2);
+    factor[1] = cof(2,1) * cof(3,3) - cof(2,3) * cof(3,1);
+    factor[2] = cof(2,1) * cof(3,2) - cof(2,2) * cof(3,1);
+    factor[3] = cof(2,0) * cof(3,3) - cof(2,3) * cof(3,0);
+    factor[4] = cof(2,2) * cof(3,0) - cof(2,0) * cof(3,2);
+    factor[5] = cof(2,0) * cof(3,1) - cof(2,1) * cof(3,0);
 
-    a1	 = cof.b2 * factor[0] - cof.b3 * factor[1] + cof.b4 * factor[2];
-    a2  = -cof.b1 * factor[0] + cof.b3 * factor[3] + cof.b4 * factor[4];
-    a3  = cof.b1 * factor[1] - cof.b2 * factor[3] + cof.b4 * factor[5];
-    a4  = -cof.b1 * factor[2] - cof.b2 * factor[4] - cof.b3 * factor[5];
+    _data[0][0]	 = cof(1,1) * factor[0] - cof(1,2) * factor[1] + cof(1,3) * factor[2];
+    _data[0][1]  = -cof(1,0) * factor[0] + cof(1,2) * factor[3] + cof(1,3) * factor[4];
+    _data[0][2]  = cof(1,0) * factor[1] - cof(1,1) * factor[3] + cof(1,3) * factor[5];
+    _data[0][3]  = -cof(1,0) * factor[2] - cof(1,1) * factor[4] - cof(1,2) * factor[5];
 
-    b1  = -cof.a2 * factor[0] + cof.a3 * factor[1] - cof.a4 * factor[2];
-    b2  = cof.a1 * factor[0] - cof.a3 * factor[3] - cof.a4 * factor[4];
-    b3  = -cof.a1 * factor[1] + cof.a2 * factor[3] - cof.a4 * factor[5];
-    b4  = cof.a1 * factor[2] + cof.a2 * factor[4] + cof.a3 * factor[5];
+    _data[1][0]  = -cof(0,1) * factor[0] + cof(0,2) * factor[1] - cof(0,3) * factor[2];
+    _data[1][1]  = cof(0,0) * factor[0] - cof(0,2) * factor[3] - cof(0,3) * factor[4];
+    _data[1][2]  = -cof(0,0) * factor[1] + cof(0,1) * factor[3] - cof(0,3) * factor[5];
+    _data[1][3]  = cof(0,0) * factor[2] + cof(0,1) * factor[4] + cof(0,2) * factor[5];
 
-    factor[0] = cof.a3 * cof.b4 - cof.a4 * cof.b3;
-    factor[1] = cof.a2 * cof.b4 - cof.a4 * cof.b2;
-    factor[2] = cof.a2 * cof.b3 - cof.a3 * cof.b2;
-    factor[3] = cof.a1 * cof.b4 - cof.a4 * cof.b1;
-    factor[4] = cof.a3 * cof.b1 - cof.a1 * cof.b3;
-    factor[5] = cof.a1 * cof.b2 - cof.a2 * cof.b1;
+    factor[0] = cof(0,2) * cof(1,3) - cof(0,3) * cof(1,2);
+    factor[1] = cof(0,1) * cof(1,3) - cof(0,3) * cof(1,1);
+    factor[2] = cof(0,1) * cof(1,2) - cof(0,2) * cof(1,1);
+    factor[3] = cof(0,0) * cof(1,3) - cof(0,3) * cof(1,0);
+    factor[4] = cof(0,2) * cof(1,0) - cof(0,0) * cof(1,2);
+    factor[5] = cof(0,0) * cof(1,1) - cof(0,1) * cof(1,0);
 
-    c1	 = factor[0] * cof.d2 - factor[1] * cof.d3 + factor[2] * cof.d4;
-    c2  = -factor[0] * cof.d1 + factor[3] * cof.d3 + factor[4] * cof.d4;
-    c3  = factor[1] * cof.d1 - factor[3] * cof.d2 + factor[5] * cof.d4;
-    c4  = -factor[2] * cof.d1 - factor[4] * cof.d2 - factor[5] * cof.d3;
+    _data[2][0]	 = factor[0] * cof(3,1) - factor[1] * cof(3,2) + factor[2] * cof(3,3);
+    _data[2][1]  = -factor[0] * cof(3,0) + factor[3] * cof(3,2) + factor[4] * cof(3,3);
+    _data[2][2]  = factor[1] * cof(3,0) - factor[3] * cof(3,1) + factor[5] * cof(3,3);
+    _data[2][3]  = -factor[2] * cof(3,0) - factor[4] * cof(3,1) - factor[5] * cof(3,2);
 
-    d1  = -factor[0] * cof.c2 + factor[1] * cof.c3 - factor[2] * cof.c4;
-    d2  = factor[0] * cof.c1 - factor[3] * cof.c3 - factor[4] * cof.c4;
-    d3  = -factor[1] * cof.c1 + factor[3] * cof.c2 - factor[5] * cof.c4;
-    d4  = factor[2] * cof.c1 + factor[4] * cof.c2 + factor[5] * cof.c3;
+    _data[3][0]  = -factor[0] * cof(2,1) + factor[1] * cof(2,2) - factor[2] * cof(2,3);
+    _data[3][1]  = factor[0] * cof(2,0) - factor[3] * cof(2,2) - factor[4] * cof(2,3);
+    _data[3][2]  = -factor[1] * cof(2,0) + factor[3] * cof(2,1) - factor[5] * cof(2,3);
+    _data[3][3]  = factor[2] * cof(2,0) + factor[4] * cof(2,1) + factor[5] * cof(2,2);
 
-    float inv_det = 1.0f / (a1 * cof.a1 + a2 * cof.a2 + a3 * cof.a3 + a4 * cof.a4);
+    float inv_det = 1.0f / (_data[0][0] * cof(0,0) +
+    		_data[0][1] * cof(0,1) +
+    		_data[0][2] * cof(0,2) +
+    		_data[0][3] * cof(0,3));
     *this *= inv_det;
     return ;
 }

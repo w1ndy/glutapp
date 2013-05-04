@@ -222,6 +222,8 @@ public:
 		return *this;
 	}
 
+	Vector& operator*=(const class Matrix &m);
+
 	friend const Vector operator*(float k, const Vector &v) {
 		return Vector(v.x * k, v.y * k, v.z * k);
 	}
@@ -230,30 +232,20 @@ public:
 class Matrix
 {
 private:
-	union {
-		float _data[4][4];
-		struct {
-			float a1, a2, a3, a4;
-			float b1, b2, b3, b4;
-			float c1, c2, c3, c4;
-			float d1, d2, d3, d4;
-		};
-	};
+	float _data[4][4];
 
 public:
-	Matrix()
-		: a1(0.0f), a2(0.0f), a3(0.0f), a4(0.0f),
-		  b1(0.0f), b2(0.0f), b3(0.0f), b4(0.0f),
-		  c1(0.0f), c2(0.0f), c3(0.0f), c4(0.0f),
-		  d1(0.0f), d2(0.0f), d3(0.0f), d4(0.0f) {};
-	Matrix(	float _a1, float _a2, float _a3, float _a4,
-			float _b1, float _b2, float _b3, float _b4,
-			float _c1, float _c2, float _c3, float _c4,
-			float _d1, float _d2, float _d3, float _d4)
-		: a1(_a1), a2(_a2), a3(_a3), a4(_a4),
-		  b1(_b1), b2(_b2), b3(_b3), b4(_b4),
-		  c1(_c1), c2(_c2), c3(_c3), c4(_c4),
-		  d1(_d1), d2(_d2), d3(_d3), d4(_d4) {};
+	Matrix() { memset(_data, 0, sizeof(_data)); }
+	Matrix(	float a1, float a2, float a3, float a4,
+			float b1, float b2, float b3, float b4,
+			float c1, float c2, float c3, float c4,
+			float d1, float d2, float d3, float d4)
+	{
+		_data[0][0] = a1, _data[0][1] = a2, _data[0][2] = a3, _data[0][3] = a4;
+		_data[1][0] = b1, _data[1][1] = b2, _data[1][2] = b3, _data[1][3] = b4;
+		_data[2][0] = c1, _data[2][1] = c2, _data[2][2] = c3, _data[2][3] = c4;
+		_data[3][0] = d1, _data[3][1] = d2, _data[3][2] = d3, _data[3][3] = d4;
+	}
 
 	void inverse();
 	void inverse(const Matrix &m);
@@ -380,10 +372,10 @@ public:
 
 	friend const Vector operator*(const Vector &v, const Matrix &m) {
 		Vector rv(
-				m.a1 * v.x + m.a2 * v.y + m.a3 * v.z + m.a4 * v.w,
-				m.b1 * v.x + m.b2 * v.y + m.b3 * v.z + m.b4 * v.w,
-				m.c1 * v.x + m.c2 * v.y + m.c3 * v.z + m.c4 * v.w,
-				m.d1 * v.x + m.d2 * v.y + m.d3 * v.z + m.d4 * v.w);
+				m(0,0) * v.x + m(0,1) * v.y + m(0,2) * v.z + m(0,3) * v.w,
+				m(1,0) * v.x + m(1,1) * v.y + m(1,2) * v.z + m(1,3) * v.w,
+				m(2,0) * v.x + m(2,1) * v.y + m(2,2) * v.z + m(2,3) * v.w,
+				m(3,0) * v.x + m(3,1) * v.y + m(3,2) * v.z + m(3,3) * v.w);
 		if(!FLOAT_ZERO(rv.w)) {
 			rv.x /= rv.w, rv.y /= rv.w, rv.z /= rv.w;
 		}
@@ -399,7 +391,7 @@ public:
 				0.0f,	0.0f,	0.0f,	1.0f);
 	}
 
-	static const Matrix buildScaleMatrix(float s) {
+	static const Matrix buildScalingMatrix(float s) {
 		return Matrix(
 				s,		0.0f,	0.0f,	0.0f,
 				0.0f,	s,		0.0f,	0.0f,
@@ -407,20 +399,20 @@ public:
 				0.0f,	0.0f,	0.0f,	1.0f);
 	}
 
-	static const Matrix buildTranslateMatrix(float dx, float dy, float dz) {
+	static const Matrix buildTranslationMatrix(float dx, float dy, float dz) {
 		return Matrix(
-				1.0f,	0.0f,	0.0f,	0.0f,
-				0.0f,	1.0f,	0.0f,	0.0f,
-				0.0f,	0.0f,	1.0f,	0.0f,
-				dx,		dy,		dz,		1.0f);
+				1.0f,	0.0f,	0.0f,	dx,
+				0.0f,	1.0f,	0.0f,	dy,
+				0.0f,	0.0f,	1.0f,	dz,
+				0.0f,	0.0f,	0.0f,	1.0f);
 	}
 
 	static const Matrix buildRotationMatrixAroundX(float radius) {
 		float fc = cosf(radius), fs = sinf(radius);
 		return Matrix(
 				1.0f,	0.0f, 	0.0f,	0.0f,
-				0.0f,	fc, 	-fs, 	0.0f,
-				0.0f, 	fs, 	fc, 	0.0f,
+				0.0f,	fc, 	fs, 	0.0f,
+				0.0f, 	-fs, 	fc, 	0.0f,
 				0.0f, 	0.0f,	0.0f, 	1.0f);
 	}
 
@@ -436,8 +428,8 @@ public:
 	static const Matrix buildRotationMatrixAroundZ(float radius) {
 		float fc = cosf(radius), fs = sinf(radius);
 		return Matrix(
-				fc,		-fs,	0.0f,	0.0f,
-				fs,		fc,		0.0f,	0.0f,
+				fc,		fs,		0.0f,	0.0f,
+				-fs,	fc,		0.0f,	0.0f,
 				0.0f,	0.0f,	1.0f,	0.0f,
 				0.0f,	0.0f,	0.0f,	1.0f);
 	}
@@ -455,6 +447,14 @@ public:
 				 *	x*x*d+cos(a)	x*y*d-z*sin(a)	x*z*d+y*sin(a)	0
 				 *	y*x*d+z*sin(a)	y*y*d+cos(a)	y*z*d-x*sin(a)	0
 				 *	z*x*d-y*sin(a)	z*y*d+x*sin(a)	z*z*d+cos(a)	0 */
+	}
+
+	void apply() const {
+		glMultTransposeMatrixf((const float *)_data);
+	}
+
+	void applyExclusively() const {
+		glLoadTransposeMatrixf((const float *)_data);
 	}
 };
 
