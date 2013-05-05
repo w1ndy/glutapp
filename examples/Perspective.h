@@ -22,9 +22,9 @@ public:
 	Perspective() {
 		core = GlutApp::construct(GlutStartupParams::construct(this));
 		core->installCamera(&camera);
-		camera.pitch(PI / 4);
 		camera.yaw(PI / 4);
-		camera.walk(-30.0f);
+		camera.pitch(asinf(1.0f/sqrt(3)));
+		camera.walk(-60.0f);
 	};
 
 	~Perspective() {};
@@ -36,6 +36,11 @@ public:
 
 	// Rendering call-back function.
 	void onRender(unsigned int timeElapsed) {
+		camera.reset();
+		camera.yaw((float)timeElapsed / 1000.0f);
+		camera.pitch(asinf(1.0f/sqrt(3)));
+		camera.walk(-60.0f);
+
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glutWireTeapot(10.0f);
 

@@ -9,29 +9,26 @@ GlutCamera::GlutCamera()
 	  _up(0.0f, 1.0f, 0.0f, 0.0f),
 	  _right(1.0f, 0.0f, 0.0f, 0.0f),
 	  _loc(0.0f, 0.0f, 0.0f, 0.0f),
-	  _transform(Matrix::buildIdentityMatrix())
+	  _transform(Matrix::buildIdentityMatrix()),
+	  _renew(false)
 {
-	_transform(2,3) = -1.0f;
+	_transform(2,2) = -1.0f;
 };
+
+void GlutCamera::lookAt(Vector eye, Vector at, Vector up)
+{
+	_loc = eye;
+	_forward = at - eye;
+	_forward.normalize();
+	_right = _forward * _up;
+	_right.normalize();
+	_up = _right * _forward;
+	_up.normalize();
+	_recompute();
+}
 
 void GlutCamera::_recompute()
 {
-	PendingOperation po;
-	while(!_operation.empty()) {
-		po = _operation.top();
-		_operation.pop();
-
-		switch(po.type)
-		{
-		case OperationType_Walk: _do_walk(po.param); break;
-		case OperationType_Strafe: _do_strafe(po.param); break;
-		case OperationType_Fly: _do_fly(po.param); break;
-		case OperationType_Roll: _do_roll(po.param); break;
-		case OperationType_Yaw: _do_yaw(po.param); break;
-		case OperationType_Pitch: _do_pitch(po.param); break;
-		}
-	}
-
 	_transform(0,0) = _right.x;
 	_transform(0,1) = _right.y;
 	_transform(0,2) = _right.z;
@@ -44,8 +41,10 @@ void GlutCamera::_recompute()
 	_transform(2,1) = _forward.y;
 	_transform(2,2) = _forward.z;
 
-	_transform(0,3) = -_loc.x;
-	_transform(1,3) = -_loc.y;
-	_transform(2,3) = -_loc.z;
+	_transform(0,3) = -_right.dot(_loc);
+	_transform(1,3) = -_up.dot(_loc);
+	_transform(2,3) = _forward.dot(_loc);
+
+	_renew = false;
 }
 

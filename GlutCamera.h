@@ -6,7 +6,7 @@
 #define __GLUTCAMERA_H__
 
 #include "BaseType.h"
-#include <stack>
+#include <queue>
 
 class GlutCamera
 {
@@ -36,47 +36,10 @@ private:
 private:
 	Vector _forward, _up, _right, _loc;
 	Matrix _transform;
-
-	std::stack<PendingOperation> _operation;
+	bool _renew;
 
 private:
 	void _recompute();
-
-	inline void _do_walk(float unit) {
-		_loc += unit * _forward;
-	}
-
-	inline void _do_strafe(float unit) {
-		_loc += unit * _right;
-	}
-
-	inline void _do_fly(float unit) {
-		_loc += unit * _up;
-	}
-
-	inline void _do_pitch(float radius) {
-		_forward *= Matrix::buildRotationMatrix(_right, radius);
-		_up = _right * _forward;
-		_up.normalize();
-		_forward = _up * _right;
-		_forward.normalize();
-	}
-
-	inline void _do_yaw(float radius) {
-		_forward *= Matrix::buildRotationMatrix(_up, radius);
-		_right = _forward * _up;
-		_right.normalize();
-		_forward = _up * _right;
-		_forward.normalize();
-	}
-
-	inline void _do_roll(float radius) {
-		_up *= Matrix::buildRotationMatrix(_forward, radius);
-		_right = _forward * _up;
-		_right.normalize();
-		_up = _right * _forward;
-		_up.normalize();
-	}
 
 public:
 	GlutCamera();
@@ -84,32 +47,61 @@ public:
 
 	void lookAt(Vector eye, Vector at, Vector up);
 
+	inline void reset()
+	{
+		_transform = Matrix::buildIdentityMatrix();
+		_transform(2,2) = -1;
+		_loc.x = 0.0f, _loc.y = 0.0f, _loc.z = 0.0f;
+		_forward.x = 0.0f, _forward.y = 0.0f, _forward.z = -1.0f;
+		_right.x = 1.0f, _right.y = 0.0f, _right.z = 0.0f;
+		_up.x = 0.0f, _up.y = 1.0f, _up.z = 0.0f;
+		_renew = false;
+
+	}
 	inline void walk(float unit) {
-		_operation.push(PendingOperation(OperationType_Walk, unit));
+		_loc += unit * _forward;
+		_renew = true;
 	}
 
 	inline void fly(float unit) {
-		_operation.push(PendingOperation(OperationType_Fly, unit));
+		_loc += unit * _up;
+		_renew = true;
 	}
 
 	inline void strafe(float unit) {
-		_operation.push(PendingOperation(OperationType_Strafe, unit));
+		_loc += unit * _right;
+		_renew = true;
 	}
 
 	inline void roll(float radius) {
-		_operation.push(PendingOperation(OperationType_Roll, radius));
+		_up *= Matrix::buildRotationMatrix(_forward, radius);
+		_right = _forward * _up;
+		_right.normalize();
+		_up = _right * _forward;
+		_up.normalize();
+		_renew = true;
 	}
 
 	inline void yaw(float radius) {
-		_operation.push(PendingOperation(OperationType_Yaw, radius));
+		_forward *= Matrix::buildRotationMatrix(_up, radius);
+		_right = _forward * _up;
+		_right.normalize();
+		_forward = _up * _right;
+		_forward.normalize();
+		_renew = true;
 	}
 
 	inline void pitch(float radius) {
-		_operation.push(PendingOperation(OperationType_Pitch, radius));
+		_forward *= Matrix::buildRotationMatrix(_right, radius);
+		_up = _right * _forward;
+		_up.normalize();
+		_forward = _up * _right;
+		_forward.normalize();
+		_renew = true;
 	}
 
 	inline void update() {
-		if(!_operation.empty())
+		if(_renew)
 			_recompute();
 
 		glMatrixMode(GL_MODELVIEW);

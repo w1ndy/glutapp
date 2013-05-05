@@ -162,6 +162,10 @@ public:
 		return sqrt(x * x + y * y + z * z);
 	}
 
+	inline float dot(const Vector &v) const {
+		return x * v.x + y * v.y + z * v.z;
+	}
+
 	inline void normalize() {
 		float k = length();
 		x /= k, y /= k, z /= k;
@@ -191,6 +195,10 @@ public:
 	Vector& operator+=(const Vector &v) {
 		x += v.x, y += v.y, z += v.z;
 		return *this;
+	}
+
+	const Vector operator-() const {
+		return Vector(-x, -y, -z);
 	}
 
 	const Vector operator-(const Vector &v) const {
