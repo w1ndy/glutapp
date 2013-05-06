@@ -1,6 +1,9 @@
 Debug/
 build/
+.settings/
 
+.cproject
+.project
 *.o
 *.exe
 *.lib
