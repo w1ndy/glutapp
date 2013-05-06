@@ -1,1 +1,9 @@
 Debug/
+build/
+
+*.o
+*.exe
+*.lib
+*.so
+*.orig
+
