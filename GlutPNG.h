@@ -10,6 +10,9 @@
 #include "BaseType.h"
 #include <cstdio>
 
+// Uncomment following macro to turn off verbose mode.
+// #define PNG_NO_VERBOSE
+
 struct png_chunk
 {
 	ULONG	length;

@@ -3,6 +3,7 @@
 //
 
 #include "GlutPNG.h"
+#include <cstdarg>
 using namespace std;
 
 const BYTE _pngsig[8] = {
@@ -52,6 +53,16 @@ const ULONG _crc32table[] = {
 	0xBDBDF21C, 0xCABAC28A, 0x53B39330, 0x24B4A3A6, 0xBAD03605, 0xCDD70693,
 	0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
 	0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D};
+
+void verbose(const char *format, ...)
+{
+#ifndef PNG_NO_VERBOSE
+	va_list p;
+	va_start(p, format);
+	vfprintf(stderr, format, p);
+	va_end(p);
+#endif // PNG_NO_VERBOSE
+}
 
 int make_4bytes_int(BYTE *p)
 {
@@ -126,21 +137,27 @@ void png_close(png_file **file)
 
 bool png_check_signature(FILE *fp)
 {
-	if(fp == NULL)
+	if(fp == NULL) {
+		verbose("png_check_signature(): invalid parameters.\n");
 		return false;
+	}
 
 	fseek(fp, 0, SEEK_SET);
 	BYTE sig[8];
-	if(8 != fread(sig, 1, 8, fp))
+	if(8 != fread(sig, 1, 8, fp)) {
+		verbose("png_check_signature(): unexpected end of file.\n");
 		return false;
+	}
 
 	return memcmp(sig, _pngsig, sizeof(BYTE) * 8) == 0;
 }
 
 ULONG png_calculate_crc32_with_type(const BYTE *type, const BYTE *data, ULONG length)
 {
-	if(type == NULL || data == NULL)
+	if(type == NULL || data == NULL) {
+		verbose("png_calculate_crc32_with_type(): invalid parameters.");
 		return 0;
+	}
 
 	ULONG c = 0xFFFFFFFF, i;
 	for(i = 0; i < 4; i++) {
@@ -154,8 +171,10 @@ ULONG png_calculate_crc32_with_type(const BYTE *type, const BYTE *data, ULONG le
 
 png_data *png_get_raw_data(png_file *file, const char *field)
 {
-	if(file == NULL || field == NULL)
+	if(file == NULL || field == NULL) {
+		verbose("png_get_raw_data(): invalid parameters.\n");
 		return NULL;
+	}
 
 	png_chunk *p = file->chunks;
 	png_chunk *found[256];
@@ -165,14 +184,14 @@ png_data *png_get_raw_data(png_file *file, const char *field)
 			found[count++] = p;
 			totsize += p->length;
 			if(count >= 256) {
-				fprintf(stderr, "png_get_raw_data(): too many field.\n");
+				verbose("png_get_raw_data(): too many field.\n");
 				return NULL;
 			}
 		}
 		p = p->next;
 	}
 	if(count == 0) {
-		fprintf(stderr, "png_get_raw_data(): field %s not found.\n", field);
+		verbose("png_get_raw_data(): field %s not found.\n", field);
 		return NULL;
 	}
 
@@ -183,7 +202,7 @@ png_data *png_get_raw_data(png_file *file, const char *field)
 		fseek(file->fp, found[i]->fpos, SEEK_SET);
 		if(found[i]->length !=
 				fread(result->data + offset, 1, found[i]->length, file->fp)) {
-			fprintf(stderr, "png_get_raw_data(): unexpected end of file.\n");
+			verbose("png_get_raw_data(): unexpected end of file.\n");
 			free(result->data);
 			free(result);
 			return NULL;
@@ -191,7 +210,7 @@ png_data *png_get_raw_data(png_file *file, const char *field)
 		if(found[i]->crc32 !=
 				png_calculate_crc32_with_type((BYTE *)field,
 						result->data + offset, found[i]->length)) {
-			fprintf(stderr, "png_get_raw_data(): data corrupted.");
+			verbose("png_get_raw_data(): data corrupted.");
 			free(result->data);
 			free(result);
 			return NULL;
@@ -212,11 +231,13 @@ void png_release_raw_data(png_data **data)
 
 png_header*	png_get_header(png_chunk *IHDR, FILE *fp)
 {
-	if(IHDR == NULL || fp == NULL)
+	if(IHDR == NULL || fp == NULL) {
+		verbose("png_get_header(): invalid parameters.\n");
 		return NULL;
+	}
 
 	if(memcmp(IHDR->type, "IHDR", 4 * sizeof(BYTE)) || IHDR->length != 13) {
-		fprintf(stderr, "png_resolve_header(): header type incorrect, "
+		verbose("png_get_header(): header type incorrect, "
 				"expecting IHDR instead of %.*s.\n", 4, IHDR->type);
 		return NULL;
 	}
@@ -224,13 +245,13 @@ png_header*	png_get_header(png_chunk *IHDR, FILE *fp)
 	BYTE *data = (BYTE *)malloc(13 * sizeof(BYTE));
 	fseek(fp, IHDR->fpos, SEEK_SET);
 	if(13 != fread(data, 1, 13, fp)) {
-		fprintf(stderr, "png_resolve_header(): unexpected end of file.\n");
+		verbose("png_get_header(): unexpected end of file.\n");
 		free(data);
 		return NULL;
 	}
 	if(IHDR->crc32 != png_calculate_crc32_with_type(
 			(const BYTE *)"IHDR", data, 13)) {
-		fprintf(stderr, "png_resolve_header(): header corrupted.\n");
+		verbose("png_get_header(): header corrupted.\n");
 		free(data);
 		return NULL;
 	}
@@ -254,9 +275,14 @@ void png_release_header(png_header **header)
 
 png_chunk *png_read_chunk(FILE *fp)
 {
+	if(fp == NULL) {
+		verbose("png_read_chunk(): invalid parameters.\n");
+		return NULL;
+	}
+
 	BYTE chead[8];
 	if(8 != fread(chead, 1, 8, fp)) {
-		fprintf(stderr, "png_get_chunk(): unexpected end of file.\n");
+		verbose("png_read_chunk(): unexpected end of file.\n");
 		return NULL;
 	}
 
@@ -266,7 +292,7 @@ png_chunk *png_read_chunk(FILE *fp)
 	result->fpos = ftell(fp);
 	fseek(fp, result->length, SEEK_CUR);
 	if(4 != fread(chead, 1, 4, fp)) {
-		fprintf(stderr, "png_get_chunk(): unexpected end of file.\n");
+		verbose("png_read_chunk(): unexpected end of file.\n");
 		free(result);
 		return NULL;
 	}
