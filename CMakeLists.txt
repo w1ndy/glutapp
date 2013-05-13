@@ -33,7 +33,7 @@ set (SRCS
 		GlutImage.cpp
 		GlutPNG.cpp)
 
-set (CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+set (CMAKE_CXX_FLAGS "-g -std=c++11 -Wall")
 
 add_library (glutapp STATIC ${HDRS} ${SRCS})
 target_link_libraries (glutapp ${CORELIBS})

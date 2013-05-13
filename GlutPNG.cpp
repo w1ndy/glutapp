@@ -92,6 +92,8 @@ png_file *png_open(const char *filename)
 			p->next = s;
 			p = p->next;
 		}
+		if(memcmp(s->type, "IEND", 4) == 0)
+			break;
 	} while(!feof(fp));
 
 	file->header = png_get_header(file->chunks, fp);
@@ -106,6 +108,9 @@ png_file *png_open(const char *filename)
 
 void png_close(png_file **file)
 {
+	if(*file == NULL)
+		return ;
+
 	png_release_header(&((*file)->header));
 
 	png_chunk *p = (*file)->chunks;
