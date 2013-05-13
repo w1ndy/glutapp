@@ -53,6 +53,10 @@ const ULONG _crc32table[] = {
 	0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
 	0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D};
 
+int make_4bytes_int(BYTE *p)
+{
+	return (*p << 24) + (*(p + 1) << 16) + (*(p + 2) << 8) + *(p + 3);
+}
 
 png_file *png_open(const char *filename)
 {
@@ -67,15 +71,42 @@ png_file *png_open(const char *filename)
 		return NULL;
 	}
 
-	// TODO: read png file here.
+	png_file *file = (png_file *)malloc(sizeof(png_file));
+	png_chunk *p = NULL, *s;
 
-	return NULL;
+	file->header = NULL;
+	file->fp = fp;
+	file->chunks = NULL;
+
+	do {
+		s = png_read_chunk(fp);
+		if(s == NULL) {
+			fprintf(stderr, "png_open(): failed to read chunk.\n");
+			png_close(&file);
+			return NULL;
+		}
+		if(p == NULL) {
+			file->chunks = s;
+			p = file->chunks;
+		} else {
+			p->next = s;
+			p = p->next;
+		}
+	} while(!feof(fp));
+
+	file->header = png_get_header(file->chunks, fp);
+	if(file->header == NULL) {
+		fprintf(stderr, "png_open(): failed to resolve header.\n");
+		png_close(&file);
+		return NULL;
+	}
+
+	return file;
 }
 
 void png_close(png_file **file)
 {
-	if((*file)->header != NULL)
-		free((*file)->header);
+	png_release_header(&((*file)->header));
 
 	png_chunk *p = (*file)->chunks;
 	while(p) {
@@ -90,9 +121,158 @@ void png_close(png_file **file)
 
 bool png_check_signature(FILE *fp)
 {
+	if(fp == NULL)
+		return false;
+
 	fseek(fp, 0, SEEK_SET);
 	BYTE sig[8];
 	if(8 != fread(sig, 1, 8, fp))
 		return false;
+
 	return memcmp(sig, _pngsig, sizeof(BYTE) * 8) == 0;
+}
+
+ULONG png_calculate_crc32_with_type(const BYTE *type, const BYTE *data, ULONG length)
+{
+	if(type == NULL || data == NULL)
+		return 0;
+
+	ULONG c = 0xFFFFFFFF, i;
+	for(i = 0; i < 4; i++) {
+		c = _crc32table[(c ^ type[i]) & 0xFF] ^ (c >> 8);
+	}
+	for(i = 0; i < length; i++) {
+		c = _crc32table[(c ^ data[i]) & 0xFF] ^ (c >> 8);
+	}
+	return c ^ 0xFFFFFFFF;
+}
+
+png_data *png_get_raw_data(png_file *file, const char *field)
+{
+	if(file == NULL || field == NULL)
+		return NULL;
+
+	png_chunk *p = file->chunks;
+	png_chunk *found[256];
+	ULONG count = 0, totsize = 0, offset = 0, i;
+	while(p) {
+		if(memcmp(p->type, field, 4 * sizeof(BYTE)) == 0) {
+			found[count++] = p;
+			totsize += p->length;
+			if(count >= 256) {
+				fprintf(stderr, "png_get_raw_data(): too many field.\n");
+				return NULL;
+			}
+		}
+		p = p->next;
+	}
+	if(count == 0) {
+		fprintf(stderr, "png_get_raw_data(): field %s not found.\n", field);
+		return NULL;
+	}
+
+	png_data *result = (png_data *)malloc(sizeof(png_data));
+	result->data = (BYTE *)malloc(totsize * sizeof(BYTE));
+	result->length = totsize;
+	for(i = 0; i < count; i++) {
+		fseek(file->fp, found[i]->fpos, SEEK_SET);
+		if(found[i]->length !=
+				fread(result->data + offset, 1, found[i]->length, file->fp)) {
+			fprintf(stderr, "png_get_raw_data(): unexpected end of file.\n");
+			free(result->data);
+			free(result);
+			return NULL;
+		}
+		if(found[i]->crc32 !=
+				png_calculate_crc32_with_type((BYTE *)field,
+						result->data + offset, found[i]->length)) {
+			fprintf(stderr, "png_get_raw_data(): data corrupted.");
+			free(result->data);
+			free(result);
+			return NULL;
+		}
+		offset += found[i]->length;
+	}
+	return result;
+}
+
+void png_release_raw_data(png_data **data)
+{
+	if(*data != NULL) {
+		free((*data)->data);
+		free(*data);
+		*data = NULL;
+	}
+}
+
+png_header*	png_get_header(png_chunk *IHDR, FILE *fp)
+{
+	if(IHDR == NULL || fp == NULL)
+		return NULL;
+
+	if(memcmp(IHDR->type, "IHDR", 4 * sizeof(BYTE)) || IHDR->length != 13) {
+		fprintf(stderr, "png_resolve_header(): header type incorrect, "
+				"expecting IHDR instead of %.*s.\n", 4, IHDR->type);
+		return NULL;
+	}
+
+	BYTE *data = (BYTE *)malloc(13 * sizeof(BYTE));
+	fseek(fp, IHDR->fpos, SEEK_SET);
+	if(13 != fread(data, 1, 13, fp)) {
+		fprintf(stderr, "png_resolve_header(): unexpected end of file.\n");
+		free(data);
+		return NULL;
+	}
+	if(IHDR->crc32 != png_calculate_crc32_with_type(
+			(const BYTE *)"IHDR", data, 13)) {
+		fprintf(stderr, "png_resolve_header(): header corrupted.\n");
+		free(data);
+		return NULL;
+	}
+
+	png_header *header = (png_header *)malloc(sizeof(png_header));
+	header->width = make_4bytes_int(data);
+	header->height = make_4bytes_int(data + 4);
+	memcpy(&(header->depth), data + 8, 5 * sizeof(BYTE));
+
+	free(data);
+	return header;
+}
+
+void png_release_header(png_header **header)
+{
+	if(*header != NULL) {
+		free(*header);
+		*header = NULL;
+	}
+}
+
+png_chunk *png_read_chunk(FILE *fp)
+{
+	BYTE chead[8];
+	if(8 != fread(chead, 1, 8, fp)) {
+		fprintf(stderr, "png_get_chunk(): unexpected end of file.\n");
+		return NULL;
+	}
+
+	png_chunk *result = (png_chunk *)malloc(sizeof(png_chunk));
+	result->length = make_4bytes_int(chead);
+	memcpy(result->type, chead + 4, 4 * sizeof(BYTE));
+	result->fpos = ftell(fp);
+	fseek(fp, result->length, SEEK_CUR);
+	if(4 != fread(chead, 1, 4, fp)) {
+		fprintf(stderr, "png_get_chunk(): unexpected end of file.\n");
+		free(result);
+		return NULL;
+	}
+	result->crc32 = make_4bytes_int(chead);
+	return result;
+}
+
+void png_destroy_chunk(png_chunk **chunk)
+{
+	if(*chunk != NULL) {
+		free(*chunk);
+		*chunk = NULL;
+	}
 }

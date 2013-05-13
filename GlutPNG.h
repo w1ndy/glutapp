@@ -33,8 +33,8 @@ struct png_header
 
 struct png_data
 {
-	BYTE 	*data;
-	ULONG 	size;
+	BYTE	*data;
+	ULONG 	length;
 };
 
 struct png_file
@@ -47,12 +47,14 @@ struct png_file
 png_file*	png_open(const char *filename);
 void		png_close(png_file **file);
 
-png_data*	png_get_raw_data(const char *field);
+png_data*	png_get_raw_data(png_file *file, const char *field);
 void		png_release_raw_data(png_data **data);
+png_header*	png_get_header(png_chunk *IHDR, FILE *fp);
+void		png_release_header(png_header **header);
+png_chunk*	png_read_chunk(FILE *fp);
+void		png_destroy_chunk(png_chunk **chunk);
 
 bool		png_check_signature(FILE *fp);
-ULONG 		png_calculate_crc32(BYTE *data, ULONG length);
-png_header*	png_resolve_header(png_chunk *IHDR);
-png_chunk*	png_read_next_chunk(FILE *fp);
+ULONG 		png_calculate_crc32_with_type(const BYTE *type, const BYTE *data, ULONG length);
 
 #endif // __GLUTPNG_H__
