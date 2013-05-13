@@ -1,7 +1,13 @@
 Debug/
 build/
 .settings/
+lib/
+bin/
+CMakeFiles/
 
+cmake_install.cmake
+Makefile
+CMakeCache.txt
 .cproject
 .project
 *.o

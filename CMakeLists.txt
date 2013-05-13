@@ -21,13 +21,17 @@ set (HDRS
 		BaseType.h
 		GlutApp.h
 		GlutCamera.h
-		GlutListener.h)
+		GlutListener.h
+		GlutImage.h
+		GlutPNG.h)
 
 set (SRCS
 		BaseType.cpp
 		GlutApp.cpp
 		GlutCamera.cpp
-		GlutListener.cpp)
+		GlutListener.cpp
+		GlutImage.cpp
+		GlutPNG.cpp)
 
 set (CMAKE_CXX_FLAGS "-std=c++11 -Wall")
 
