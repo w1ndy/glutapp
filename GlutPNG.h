@@ -49,6 +49,7 @@ struct png_file
 
 png_file*	png_open(const char *filename);
 void		png_close(png_file **file);
+png_data*	png_extract(png_data *IDAT);
 
 png_data*	png_get_raw_data(png_file *file, const char *field);
 void		png_release_raw_data(png_data **data);

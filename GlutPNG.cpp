@@ -73,12 +73,12 @@ png_file *png_open(const char *filename)
 {
 	FILE *fp;
 	if((fp = fopen(filename, "rb")) == NULL) {
-		fprintf(stderr, "png_open(): %s file not found.\n", filename);
+		verbose("png_open(): %s file not found.\n", filename);
 		return NULL;
 	}
 
 	if(!png_check_signature(fp)) {
-		fprintf(stderr, "png_open(): not a png file.\n");
+		verbose("png_open(): not a png file.\n");
 		return NULL;
 	}
 
@@ -92,7 +92,7 @@ png_file *png_open(const char *filename)
 	do {
 		s = png_read_chunk(fp);
 		if(s == NULL) {
-			fprintf(stderr, "png_open(): failed to read chunk.\n");
+			verbose("png_open(): failed to read chunk.\n");
 			png_close(&file);
 			return NULL;
 		}
@@ -109,7 +109,7 @@ png_file *png_open(const char *filename)
 
 	file->header = png_get_header(file->chunks, fp);
 	if(file->header == NULL) {
-		fprintf(stderr, "png_open(): failed to resolve header.\n");
+		verbose("png_open(): failed to resolve header.\n");
 		png_close(&file);
 		return NULL;
 	}
@@ -306,4 +306,158 @@ void png_destroy_chunk(png_chunk **chunk)
 		free(*chunk);
 		*chunk = NULL;
 	}
+}
+
+struct read_stat {
+	BYTE *data;
+	size_t len;
+
+	int buf;
+	int buf_len;
+};
+
+// TODO: CHECK BINARY ORDER (LSB OR MSB)
+
+inline void init_read_stat(read_stat &stat, BYTE *data, size_t begin, size_t length)
+{
+	stat.data 		= data + begin;
+	stat.len		= length - begin;
+
+	if(stat.len > 0) {
+		stat.buf = *(data++);
+		stat.len--;
+		stat.buf_len = 8;
+	} else {
+		stat.buf = 0;
+		stat.buf_len = -1;
+	}
+}
+
+inline bool push_byte(read_stat &stat)
+{
+	if(stat.len <= 0) {
+		return false;
+	} else {
+		stat.buf |= *(stat.data++) << stat.buf_len;
+		stat.len--;
+		stat.buf_len += 8;
+	}
+	return true;
+}
+
+inline bool push_bits(read_stat &stat, int count)
+{
+	while(stat.buf_len < count && push_byte(stat));
+
+	if(stat.buf_len < count) {
+		verbose("read_bits(): end of buffer.\n");
+		return false;
+	}
+
+	return true;
+}
+
+inline void pop_bits(read_stat &stat, int count)
+{
+	if(stat.buf_len < count) {
+		verbose("pop_bits(): too few bits to pop.\n");
+		count = stat.buf_len;
+	}
+	stat.buf_len -= count;
+	stat.buf >>= count;
+}
+
+#define PUSH(s, n) \
+	{ \
+		if(!push_bits(s, n)) { \
+			verbose("png_extract(): unexpected end of data stream.\n"); \
+			return NULL; \
+		} \
+	}
+#define POP(s, n)	pop_bits(s, n)
+#define BUF(stat) 	(stat.buf)
+#define END(stat)	(stat.buf_len == 0)
+
+int inflate_dynamic(read_stat s, BYTE *buffer, size_t buffer_length, size_t buffer_offset)
+{
+	// TODO write inflate code.
+	return -1;
+}
+
+bool inflate(BYTE *buffer, size_t buffer_length, size_t buffer_offset,
+		BYTE *input, size_t input_length, size_t input_offset)
+{
+	int type, byte;
+	read_stat s;
+	bool eob = false;
+
+	init_read_stat(s, input, input_offset, input_length);
+
+	do {
+		PUSH(s, 3);
+		if(BUF(s) & 0x1)
+			eob = true;			// end of block reached.
+
+		type = (BUF(s) & 0x6) >> 1;
+		POP(s, 3);
+		switch(type)
+		{
+		case 0:
+			verbose("inflate(): data block uncompressed.\n");
+			break;
+		case 1:
+			verbose("inflate(): data block compressed with fixed huffman tree.\n");
+			break;
+		case 2:
+			verbose("inflate(): data block compressed with dynamic huffman tree.\n");
+			byte = inflate_dynamic(s, buffer, buffer_length, buffer_offset);
+			if(byte == -1) {
+				verbose("inflate(): failed to inflate data.");
+				return false;
+			}
+			buffer_offset += byte;
+			break;
+		}
+	} while(!eob && !END(s));
+
+	return true;
+}
+
+png_data *png_extract(png_file *file)
+{
+	png_data *IDAT = png_get_raw_data(file, "IDAT");
+	if(IDAT == NULL) {
+		verbose("png_extract(): no IDAT section found.\n");
+	}
+
+	if(IDAT->length < 2 || (IDAT->data[0] != 0x78) ||
+			(IDAT->data[0] * 256 + IDAT->data[1]) % 31) {
+		verbose("png_extract(): invalid data.\n");
+		return NULL;
+	}
+
+	png_data *result = (png_data *)malloc(sizeof(png_data));
+	if(!result) {
+		verbose("png_extract(): out of memory.\n");
+		return NULL;
+	}
+
+	// TODO: adjust size according to color type.
+	result->length = file->header->width * file->header->height * 4;
+	result->data = (BYTE *)malloc(result->length);
+	if(!result->data) {
+		verbose("png_extract(): out of memory.\n");
+		free(result);
+		return NULL;
+	}
+
+	// remove 2 header bytes and 4 tail bytes.
+	if(!inflate(result->data, result->length, 0,
+			IDAT->data, IDAT->length - 4, 2)) {
+		verbose("png_extract(): error occurred while inflating data.\n");
+		png_release_raw_data(&result);
+		return NULL;
+	}
+
+	return result;
 }
