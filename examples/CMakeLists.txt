@@ -1,6 +1,7 @@
 set (EXAMPLE_HDRS
 		Application.h
-		Perspective.h)
+		Perspective.h
+		TrivialSceneManagerTest.h)
 
 set (EXAMPLE_SRCS
 		Main.cpp)

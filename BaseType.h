@@ -124,6 +124,9 @@ public:
 	static Color Green;
 	static Color Blue;
 	static Color White;
+	static Color LightGray;
+	static Color Gray;
+	static Color DarkGray;
 	static Color Black;
 };
 

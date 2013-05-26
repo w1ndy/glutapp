@@ -8,6 +8,7 @@
 
 #include "Application.h"
 #include "Perspective.h"
+#include "TrivialSceneManagerTest.h"
 
 template<class T>
 void invoke() {
@@ -18,6 +19,6 @@ void invoke() {
 
 int main()
 {
-	invoke<Perspective>();
+	invoke<TrivialSceneManagerTest>();
 	return 0;
 }

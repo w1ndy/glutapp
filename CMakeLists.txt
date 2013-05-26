@@ -23,7 +23,10 @@ set (HDRS
 		GlutCamera.h
 		GlutListener.h
 		GlutImage.h
-		GlutPNG.h)
+		GlutPNG.h
+		GlutBounds2D.h
+		GlutGraphics2D.h
+		GlutSceneManager2D.h)
 
 set (SRCS
 		BaseType.cpp
@@ -31,7 +34,9 @@ set (SRCS
 		GlutCamera.cpp
 		GlutListener.cpp
 		GlutImage.cpp
-		GlutPNG.cpp)
+		GlutPNG.cpp
+		GlutGraphics2D.cpp
+		GlutSceneManager2D.cpp)
 
 set (CMAKE_CXX_FLAGS "-g -std=c++11 -Wall")
 
