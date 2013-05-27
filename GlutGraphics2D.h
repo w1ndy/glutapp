@@ -122,7 +122,7 @@ private:
 
 public:
 	Circle(float x, float y, float radius, Color c = Color::White, int smooth = 360)
-		:  BorderedObject(true, c), _bc(_x, _y, _r), _x(x), _y(y), _r(radius), _smooth(smooth) {};
+		:  BorderedObject(true, c), _bc(x, y, radius), _x(x), _y(y), _r(radius), _smooth(smooth) {};
 	~Circle() {};
 
 	const Bounds2D &getBounds() const { return _bc; }

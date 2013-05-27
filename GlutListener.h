@@ -5,6 +5,16 @@
 #ifndef __GLUTLISTENER_H__
 #define __GLUTLISTENER_H__
 
+#include "BaseType.h"
+
+enum MouseButton
+{
+	MouseButton_Left,
+	MouseButton_Right,
+	MouseButton_ScrollUp,
+	MouseButton_ScrollDown
+};
+
 class GlutListener
 {
 public:
@@ -13,6 +23,9 @@ public:
 	virtual void onIdle() {};
 	virtual void onResize(int width, int height);
 	virtual void onRender(unsigned int timeElapsed) = 0;
+	virtual void onMouseButtonDown(MouseButton b, int x, int y) {};
+	virtual void onMouseButtonUp(MouseButton b, int x, int y) {};
+	virtual void onMouseMove(int x, int y) {};
 
 	virtual const char *name() const {
 		return "<Default GlutListener Name>";

@@ -97,6 +97,9 @@ void GlutApp::_initialize(const GlutStartupParams &params)
 	glutReshapeFunc(_reshape_callback);
 	glutIdleFunc(_idle_callback);
 
+	glutMouseFunc(_mouse_callback);
+	glutMotionFunc(_mousemove_callback);
+
 	glClearColor(
 			params.ClearColor.r,
 			params.ClearColor.g,
@@ -151,3 +154,38 @@ void GlutApp::_dispatchIdleEvent()
 		l->onIdle();
 	glutPostRedisplay();
 }
+
+void GlutApp::_dispatchMouseEvent(int button, int state, int x, int y)
+{
+	MouseButton b;
+
+	switch(button)
+	{
+	case GLUT_LEFT_BUTTON:
+		b = MouseButton_Left;
+		break;
+	case GLUT_RIGHT_BUTTON:
+		b = MouseButton_Right;
+		break;
+	case 0x03:
+		b = MouseButton_ScrollUp;
+		break;
+	case 0x04:
+		b = MouseButton_ScrollDown;
+		break;
+	}
+	if(state == GLUT_DOWN) {
+		for(GlutListener *l : _listener)
+			l->onMouseButtonDown(b, x, y);
+	} else {
+		for(GlutListener *l : _listener)
+			l->onMouseButtonUp(b, x, y);
+	}
+}
+
+void GlutApp::_dispatchMouseMoveEvent(int x, int y)
+{
+	for(GlutListener *l : _listener)
+		l->onMouseMove(x, y);
+}
+

@@ -156,6 +156,8 @@ private:
 	void _dispatchRenderEvent();
 	void _dispatchReshapeEvent(int w, int h);
 	void _dispatchIdleEvent();
+	void _dispatchMouseEvent(int button, int state, int x, int y);
+	void _dispatchMouseMoveEvent(int x, int y);
 	//void _dispatchCameraChangedEvent();
 
 	template<typename T>
@@ -205,6 +207,16 @@ public:
 	static void _idle_callback() {
 		if(_appInst.get())
 			_appInst->_dispatchIdleEvent();
+	}
+
+	static void _mouse_callback(int button, int state, int x, int y) {
+		if(_appInst.get())
+			_appInst->_dispatchMouseEvent(button, state, x, y);
+	}
+
+	static void _mousemove_callback(int x, int y) {
+		if(_appInst.get())
+			_appInst->_dispatchMouseMoveEvent(x, y);
 	}
 };
 

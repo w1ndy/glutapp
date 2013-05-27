@@ -13,8 +13,9 @@ enum Bounds2DType
 class Bounds2D
 {
 public:
-	virtual Bounds2DType getType() const 		= 0;
-	virtual bool isIntersected(const Bounds2D &b) = 0;
+	virtual Bounds2DType getType() const 				= 0;
+	virtual bool isInside(float x, float y) const		= 0;
+	virtual bool isIntersected(const Bounds2D &b) const = 0;
 };
 
 class BoundingCircle : public Bounds2D
@@ -47,7 +48,12 @@ public:
 		return Bounds2DType_Circle;
 	}
 
-	bool isIntersected(const Bounds2D &b)
+	bool isInside(float x, float y) const
+	{
+		return (sqrt((x - _x) * (x - _x) + (y - _y) * (y - _y)) < _r);
+	}
+
+	bool isIntersected(const Bounds2D &b) const
 	{
 		switch(b.getType())
 		{

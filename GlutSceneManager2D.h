@@ -43,7 +43,7 @@ private:
 
 public:
 	TrivialSceneManager2D();
-	~TrivialSceneManager2D();
+	virtual ~TrivialSceneManager2D();
 
 	bool addObject(SceneObject2D *object);
 	void removeObject(SceneObject2D *object);
