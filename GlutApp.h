@@ -190,7 +190,7 @@ private:
 	unsigned 	_frameCount;
 	unsigned	_clearFlag;
 
-	std::chrono::system_clock::time_point _timeBegin;
+	std::chrono::high_resolution_clock::time_point _timeBegin;
 
 public:
 	// Forward hooks.

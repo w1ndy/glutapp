@@ -371,7 +371,7 @@ inline void pop_bits(read_stat &stat, int count)
 	{ \
 		if(!push_bits(s, n)) { \
 			verbose("png_extract(): unexpected end of data stream.\n"); \
-			return NULL; \
+			return false; \
 		} \
 	}
 #define POP(s, n)	pop_bits(s, n)
