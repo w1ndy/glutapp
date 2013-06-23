@@ -38,7 +38,7 @@ set (SRCS
 		GlutGraphics2D.cpp
 		GlutSceneManager2D.cpp)
 
-if (${CMAKE_CLANG_COMPILER_ID})
+if (APPLE)
 	set (CMAKE_CXX_FLAGS		"-Wall -std=c++11 -stdlib=libc++")
 	set (CMAKE_CXX_FLAGS_DEBUG	"-g")
 else ()
