@@ -37,8 +37,17 @@ set (SRCS
 		GlutPNG.cpp
 		GlutGraphics2D.cpp
 		GlutSceneManager2D.cpp)
+if (UNIX)
+	set (CMAKE_C_COMPILER	"gcc")
+	set (CMAKE_CXX_COMPILER "g++")
+	set (CMAKE_LINKER		"ld")
+endif ()
 
-set (CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+set (CMAKE_C_FLAGS			"-std=c99 -Wall")
+set (CMAKE_C_FLAGS_DEBUG	"-g")
+
+set (CMAKE_CXX_FLAGS		"-std=c++11 -Wall")
+set (CMAKE_CXX_FLAGS_DEBUG	"-g")
 
 add_library (glutapp STATIC ${HDRS} ${SRCS})
 target_link_libraries (glutapp ${CORELIBS})
