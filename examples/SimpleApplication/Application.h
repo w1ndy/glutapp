@@ -9,23 +9,16 @@
 #ifndef __APPLICATION_H__
 #define __APPLICATION_H__
 
-#include "../GlutApp.h"
-#include "../BaseType.h"
-#include <iostream>
-#include <memory>
-using namespace std;
+#include "../ExampleApplication.h"
 
-class Application : public GlutListener
+class Application : public ExampleApplication
 {
-private:
-	GlutApp::Ptr core;
-
 public:
-	Application();
-	~Application();
+	Application() {};
+	virtual ~Application() {};
 
 	// Rendering call-back function.
-	void onRender(unsigned int timeElapsed) {
+	virtual void onRender(unsigned int timeElapsed) {
 		glDisable(GL_CULL_FACE);
 		//Matrix::buildTranslateMatrix(100.0f, 100.0f, 0.0f).apply();
 		glLoadIdentity();
@@ -37,19 +30,9 @@ public:
 
 	void run() { core->run(); }
 
-	const char *name() const {
+	virtual const char *name() const {
 		return "Minimal GLUT Application";
 	}
 };
-
-Application::Application()
-{
-	// Construct a GlutApp instance using default parameters.
-	core = GlutApp::construct(GlutStartupParams::construct(this));
-}
-
-Application::~Application()
-{
-}
 
 #endif // __APPLICATION_H__

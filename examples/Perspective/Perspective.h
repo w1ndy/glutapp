@@ -9,25 +9,17 @@
 #ifndef __PERSPECTIVE_H__
 #define __PERSPECTIVE_H__
 
-#include "../GlutApp.h"
-#include "../BaseType.h"
+#include "../ExampleApplication.h"
 
-class Perspective : public Application
+class Perspective : public ExampleApplication
 {
 private:
-	GlutApp::Ptr core;
 	GlutCamera camera;
 
 public:
-	Perspective() {
-		core = GlutApp::construct(GlutStartupParams::construct(this));
-		core->installCamera(&camera);
-		camera.yaw(PI / 4);
-		camera.pitch(asinf(1.0f/sqrt(3)));
-		camera.walk(-60.0f);
-	};
+	Perspective() {};
 
-	~Perspective() {};
+	virtual ~Perspective() {};
 
 	// View changed event call-back function.
 	void onResize(int width, int height) {
@@ -35,7 +27,7 @@ public:
 	}
 
 	// Rendering call-back function.
-	void onRender(unsigned int timeElapsed) {
+	virtual void onRender(unsigned int timeElapsed) {
 		camera.reset();
 		camera.yaw((float)timeElapsed / 1000.0f);
 		camera.pitch(asinf(1.0f/sqrt(3)));
@@ -58,9 +50,15 @@ public:
 		glEnd();
 	}
 
-	void run() { core->run(); }
+	void run() {
+		core->installCamera(&camera);
+		camera.yaw(PI / 4);
+		camera.pitch(asinf(1.0f/sqrt(3)));
+		camera.walk(-60.0f);
+		core->run();
+	}
 
-	const char *name() const {
+	virtual const char *name() const {
 		return "GL Perspective View";
 	}
 };

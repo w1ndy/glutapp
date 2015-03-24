@@ -5,9 +5,9 @@
 #ifndef __TRIVIALSCENEMANAGERTEST_H__
 #define __TRIVIALSCENEMANAGERTEST_H__
 
-#include "../GlutApp.h"
-#include "../GlutGraphics2D.h"
-#include "../GlutSceneManager2D.h"
+#include <GlutApp.h>
+#include <GlutGraphics2D.h>
+#include <GlutSceneManager2D.h>
 
 class TrivialSceneManagerTest : public GlutListener
 {

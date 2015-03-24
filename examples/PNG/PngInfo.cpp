@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 	puts(" -- valid chunk list");
 	png_chunk *p = file->chunks;
 	while(p) {
-		printf(" --- %.*s\n\tlength = %ld bytes\n\tstart at = %ld bytes\n\tcrc32 = 0x%08X\n",
+		printf(" --- %.*s\n\tlength = %ld bytes\n\tstart at = %ld bytes\n\tcrc32 = 0x%08lX\n",
 				4, p->type, p->length, p->fpos, p->crc32);
 		p = p->next;
 	}
