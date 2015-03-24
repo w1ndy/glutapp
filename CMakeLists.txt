@@ -38,7 +38,7 @@ set (SRCS
 		GlutGraphics2D.cpp
 		GlutSceneManager2D.cpp)
 
-if (APPLE or CMAKE_SYSTEM_NAME matches "*BSD*")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 	set (CMAKE_CXX_FLAGS		"-Wall -std=c++11 -stdlib=libc++")
 	set (CMAKE_CXX_FLAGS_DEBUG	"-g")
 else ()
