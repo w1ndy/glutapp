@@ -9,6 +9,7 @@
 #ifndef __PERSPECTIVE_H__
 #define __PERSPECTIVE_H__
 
+#include <GlutUtils.h>
 #include "../ExampleApplication.h"
 
 class Perspective : public ExampleApplication
@@ -36,26 +37,15 @@ public:
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glutWireTeapot(10.0f);
 
-		// Draw x (red), y (green), z (blue) axis.
-		glBegin(GL_LINES);
-			glColor3f(1.0f, 0.0f, 0.0f);
-			glVertex3f(-100.0f, 0.0f, 0.0f);
-			glVertex3f(100.0f, 0.0f, 0.0f);
-			glColor3f(0.0f, 1.0f, 0.0f);
-			glVertex3f(0.0f, -100.0f, 0.0f);
-			glVertex3f(0.0f, 100.0f, 0.0f);
-			glColor3f(0.0f, 0.0f, 1.0f);
-			glVertex3f(0.0f, 0.0f, -100.0f);
-			glVertex3f(0.0f, 0.0f, 100.0f);
-		glEnd();
+		drawAxis(100.0f);
 	}
 
-	void run() {
+	int run() {
 		core->installCamera(&camera);
 		camera.yaw(PI / 4);
 		camera.pitch(asinf(1.0f/sqrt(3)));
 		camera.walk(-60.0f);
-		core->run();
+		return core->run();
 	}
 
 	virtual const char *name() const {

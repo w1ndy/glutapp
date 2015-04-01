@@ -21,7 +21,7 @@ public:
     // Rendering call-back function.
     virtual void onRender(unsigned int timeElapsed) = 0;
 
-    void run() { core->run(); }
+    int run() { return core->run(); }
 
     virtual const char *name() const = 0;
 };

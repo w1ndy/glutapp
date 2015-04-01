@@ -6,11 +6,9 @@
 // Copyright (c) 2013, skies457.
 //
 
-#include <Utils.h>
 #include "Perspective.h"
 
 int main()
 {
-	invoke<Perspective>();
-	return 0;
+	return invoke<Perspective>();
 }

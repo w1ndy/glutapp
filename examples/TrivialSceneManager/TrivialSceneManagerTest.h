@@ -8,6 +8,7 @@
 #include <GlutApp.h>
 #include <GlutGraphics2D.h>
 #include <GlutSceneManager2D.h>
+#include <GlutUtils.h>
 
 class TrivialSceneManagerTest : public GlutListener
 {
@@ -36,7 +37,7 @@ public:
 		delete _scenemgr;
 	}
 
-	void run() { _core->run(); }
+	int run() { return _core->run(); }
 
 	void onRender(unsigned int timeElapsed) {}
 

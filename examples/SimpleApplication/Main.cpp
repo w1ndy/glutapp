@@ -6,11 +6,9 @@
 // Copyright (c) 2013, skies457.
 //
 
-#include <Utils.h>
 #include "Application.h"
 
 int main()
 {
-	invoke<Application>();
-	return 0;
+	return invoke<Application>();
 }

@@ -6,11 +6,9 @@
 // Copyright (c) 2013, skies457.
 //
 
-#include <Utils.h>
 #include "TrivialSceneManagerTest.h"
 
 int main()
 {
-	invoke<TrivialSceneManagerTest>();
-	return 0;
+	return invoke<TrivialSceneManagerTest>();
 }
