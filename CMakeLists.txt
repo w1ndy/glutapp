@@ -3,15 +3,18 @@ project (glutapp)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
+find_package(GLEW REQUIRED)
 
 set (CORELIBS
 		${OPENGL_LIBRARIES}
-		${GLUT_glut_LIBRARY})
+		${GLUT_glut_LIBRARY}
+		${GLEW_LIBRARIES})
 
 include_directories(
 		${PROJECT_SOURCE_DIR}
 		${OPENGL_INCLUDE_DIRS}
-		${GLUT_INCLUDE_DIRS})
+		${GLUT_INCLUDE_DIRS}
+		${GLEW_INCLUDE_DIRS})
 
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -26,7 +29,9 @@ set (HDRS
 		GlutPNG.h
 		GlutBounds2D.h
 		GlutGraphics2D.h
-		GlutSceneManager2D.h)
+		GlutSceneManager2D.h
+		GlutMesh.h
+		GlutUtils.h)
 
 set (SRCS
 		BaseType.cpp
@@ -36,7 +41,8 @@ set (SRCS
 		GlutImage.cpp
 		GlutPNG.cpp
 		GlutGraphics2D.cpp
-		GlutSceneManager2D.cpp)
+		GlutSceneManager2D.cpp
+		GlutMesh.cpp)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 	set (CMAKE_CXX_FLAGS		"-Wall -std=c++11 -stdlib=libc++")
