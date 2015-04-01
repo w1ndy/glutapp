@@ -22,7 +22,7 @@ void GlutListener::updatePerspectiveView(int width, int height, double fovy)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glViewport(0, 0, width, height);
-	gluPerspective(fovy, (double)width / (float)height, 0.1, 1000.0);
+	gluPerspective(fovy, (double)width / (float)height, 5.0f, 100000.0f);
 	glMatrixMode(GL_MODELVIEW);
 }
 

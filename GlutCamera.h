@@ -34,8 +34,8 @@ private:
 	};
 
 private:
-	Vector _forward, _up, _right, _loc;
-	Matrix _transform;
+	Vectorf _forward, _up, _right, _loc;
+	Matrixf _transform;
 	bool _renew;
 
 private:
@@ -45,11 +45,11 @@ public:
 	GlutCamera();
 	~GlutCamera() {};
 
-	void lookAt(Vector eye, Vector at, Vector up);
+	void lookAt(Vectorf eye, Vectorf at, Vectorf up);
 
 	inline void reset()
 	{
-		_transform = Matrix::buildIdentityMatrix();
+		_transform = Matrixf::buildIdentityMatrix();
 		_transform(2,2) = -1;
 		_loc.x = 0.0f, _loc.y = 0.0f, _loc.z = 0.0f;
 		_forward.x = 0.0f, _forward.y = 0.0f, _forward.z = -1.0f;
@@ -74,7 +74,7 @@ public:
 	}
 
 	inline void roll(float radius) {
-		_up *= Matrix::buildRotationMatrix(_forward, radius);
+		_up *= Matrixf::buildRotationMatrix(_forward, radius);
 		_right = _forward * _up;
 		_right.normalize();
 		_up = _right * _forward;
@@ -83,7 +83,7 @@ public:
 	}
 
 	inline void yaw(float radius) {
-		_forward *= Matrix::buildRotationMatrix(_up, radius);
+		_forward *= Matrixf::buildRotationMatrix(_up, radius);
 		_right = _forward * _up;
 		_right.normalize();
 		_forward = _up * _right;
@@ -92,7 +92,7 @@ public:
 	}
 
 	inline void pitch(float radius) {
-		_forward *= Matrix::buildRotationMatrix(_right, radius);
+		_forward *= Matrixf::buildRotationMatrix(_right, radius);
 		_up = _right * _forward;
 		_up.normalize();
 		_forward = _up * _right;

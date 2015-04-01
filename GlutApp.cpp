@@ -1,6 +1,7 @@
 #include "GlutApp.h"
-#include <cstdio>
+#include <iostream>
 #include <cstring>
+using namespace std;
 
 std::shared_ptr<GlutApp> GlutApp::_appInst;
 DefaultGlutListener GlutApp::_defaultListener;
@@ -106,6 +107,11 @@ void GlutApp::_initialize(const GlutStartupParams &params)
 			params.ClearColor.b,
 			params.ClearColor.a);
 	_params = params;
+
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+		cerr << "Error: " << glewGetErrorString(err) << endl;
+
 	_dispatchInitEvent();
 }
 
@@ -117,10 +123,19 @@ void GlutApp::_dispatchInitEvent()
 
 void GlutApp::_dispatchRenderEvent()
 {
-	if(_currentCam) _currentCam->update();
-
 	_frameCount++;
 	glClear(_clearFlag);
+	glLoadIdentity();
+
+	if(_clearFlag & GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST);
+    if(_clearFlag & GL_STENCIL_BUFFER_BIT)
+    	glEnable(GL_STENCIL_TEST);
+
+	for(GlutListener *l : _listener)
+		l->onPreRender();
+	if(_currentCam) _currentCam->update();
+
 	unsigned int duration = _getElapsedTime(_timeBegin);
 	for(GlutListener *l : _listener)
 		l->onRender(duration);
@@ -128,6 +143,8 @@ void GlutApp::_dispatchRenderEvent()
 		glutSwapBuffers();
 	else
 		glFlush();
+	for(GlutListener *l : _listener)
+		l->onPostRender();
 }
 
 void GlutApp::_dispatchReshapeEvent(int w, int h)

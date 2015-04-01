@@ -9,12 +9,6 @@
 #ifndef __GLUTAPP_H__
 #define __GLUTAPP_H__
 
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/freeglut.h>
-#endif // __APPLE__
-
 #include <iostream>
 #include <memory>
 #include <chrono>
@@ -72,8 +66,9 @@ public:
 
 	~GlutApp();
 
-	inline void run() {
+	inline int run() {
 		glutMainLoop();
+		return 0;
 	}
 
 	inline void installListener(GlutListener *l) {

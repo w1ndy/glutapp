@@ -9,6 +9,8 @@
 #ifndef __BASETYPE_H__
 #define __BASETYPE_H__
 
+#include <GL/glew.h>
+
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -20,6 +22,8 @@
 #include <exception>
 #include <cmath>
 #include <cstring>
+#include <cassert>
+#include <limits>
 
 #ifndef PI
 #define PI	3.1415926535897932
@@ -31,6 +35,8 @@
 #ifdef ULONG
 #undef ULONG
 #endif // ULONG
+
+#define FLOAT_SIGN(f) ((f) > 0 ? 1 : -1)
 
 #define ALPHA_MASK 	0xFF000000
 #define RED_MASK	0x00FF0000
@@ -62,6 +68,58 @@ typedef unsigned long ULONG;
 #define RGB_TO_RED_FLOAT 	ARGB_TO_RED_FLOAT
 #define RGB_TO_GREEN_FLOAT	ARGB_TO_GREEN_FLOAT
 #define RGB_TO_BLUE_FLOAT	ARGB_TO_BLUE_FLOAT
+
+template<typename T>
+struct primitive_type_to_gl_enum {};
+
+template<>
+struct primitive_type_to_gl_enum<float>
+{
+	static constexpr int value = GL_FLOAT;
+};
+
+template<>
+struct primitive_type_to_gl_enum<double>
+{
+	static constexpr int value = GL_DOUBLE;
+};
+
+template<>
+struct primitive_type_to_gl_enum<unsigned char>
+{
+	static constexpr int value = GL_UNSIGNED_BYTE;
+};
+
+template<>
+struct primitive_type_to_gl_enum<unsigned short>
+{
+	static constexpr int value = GL_UNSIGNED_SHORT;
+};
+
+template<>
+struct primitive_type_to_gl_enum<unsigned int>
+{
+	static constexpr int value = GL_UNSIGNED_INT;
+};
+
+template<typename T>
+struct floating_point_type_properties {};
+
+template<>
+struct floating_point_type_properties<float>
+{
+	static constexpr float zero = 0.0f;
+	static constexpr float one = 1.0f;
+	static constexpr float epsilon = 1e-6;
+};
+
+template<>
+struct floating_point_type_properties<double>
+{
+	static constexpr double zero = 0.0;
+	static constexpr double one = 1.0;
+	static constexpr double epsilon = 1e-8;
+};
 
 class Color
 {
@@ -130,127 +188,202 @@ public:
 	static Color Black;
 };
 
-#define FLOAT_EPSILON		1e-6
-#define FLOAT_EQUAL(f1, f2)	(fabs((f1) - (f2)) < FLOAT_EPSILON)
-#define FLOAT_ZERO(f)		(FLOAT_EQUAL(f, 0))
+template<typename T> class Matrix;
 
+template<typename T>
 class Vector
 {
 public:
 	union {
-		float _data[4];
+		T _data[4];
 		struct {
-			float x;
-			float y;
-			float z;
-			float w;
+			float x, y, z, w;
 		};
 	};
 
-public:
-	enum VectorType
+private:
+	static constexpr T N0 = floating_point_type_properties<T>::zero;
+	static constexpr T N1 = floating_point_type_properties<T>::one;
+
+	bool _equal(T _a, T _b)
 	{
-		VectorType_Direction,
-		VectorType_Position
-	};
+		return (abs(_a - _b) < floating_point_type_properties<T>::epsilon);
+	}
+
+	bool _iszero(T _a) {
+		return _equal(_a, N0);
+	}
+
 public:
-	Vector(float _x, float _y, float _z, float _w = 1.0f)
+	Vector()
+	{
+		memset(_data, 0, sizeof(_data));
+	}
+
+	Vector(T _x, T _y, T _z, T _w = N0)
 		: x(_x), y(_y), z(_z), w(_w) {}
 
-	inline void set(float _x, float _y, float _z, float _w = 1.0f) {
+	void set(T _x, T _y, T _z, T _w = N0)
+	{
 		x = _x, y = _y, z = _z, w = _w;
 	}
 
-	inline float length() const {
+	T *raw() const {
+		return (T *)_data;
+	}
+
+	T length() const
+	{
 		return sqrt(x * x + y * y + z * z);
 	}
 
-	inline float dot(const Vector &v) const {
+	T dot(Vector<T> const &v) const
+	{
 		return x * v.x + y * v.y + z * v.z;
 	}
 
-	inline void normalize() {
-		float k = length();
+	void normalize()
+	{
+		T k = length();
+		if(_iszero(k)) return;
 		x /= k, y /= k, z /= k;
 	}
 
-	bool operator==(const Vector &v) const {
-		return (FLOAT_EQUAL(x, v.x) &&
-				FLOAT_EQUAL(y, v.y) &&
-				FLOAT_EQUAL(z, v.z));
+	void negate()
+	{
+		x = -x, y = -y, z = -z;
 	}
 
-	bool operator!=(const Vector &v) const {
-		return (!FLOAT_EQUAL(x, v.x) ||
-				!FLOAT_EQUAL(y, v.y) ||
-				!FLOAT_EQUAL(z, v.z));
+	bool operator==(Vector<T> const &v) const
+	{
+		return (_equal(x, v.x) &&
+				_equal(y, v.y) &&
+				_equal(z, v.z));
 	}
 
-	Vector &operator=(const Vector &v) {
-		x = v.x, y = v.y, z = v.z, w = v.w;
+	bool operator!=(Vector<T> const &v) const
+	{
+		return (!_equal(x, v.x) ||
+				!_equal(y, v.y) ||
+				!_equal(z, v.z));
+	}
+
+	Vector<T> &operator=(Vector<T> const &v)
+	{
+		x = v.x, y = v.y, z = v.z, w = N0;
 		return *this;
 	}
 
-	const Vector operator+(const Vector &v) const {
+	Vector<T> operator+(Vector<T> const &v) const
+	{
 		return Vector(x + v.x, y + v.y, z + v.z);
 	}
 
-	Vector& operator+=(const Vector &v) {
+	Vector<T> &operator+=(Vector<T> const &v)
+	{
 		x += v.x, y += v.y, z += v.z;
 		return *this;
 	}
 
-	const Vector operator-() const {
-		return Vector(-x, -y, -z);
+	Vector<T> operator-() const
+	{
+		return Vector<T>(-x, -y, -z);
 	}
 
-	const Vector operator-(const Vector &v) const {
-		return Vector(x - v.x, y - v.y, z - v.z);
+	Vector<T> operator-(Vector<T> const &v) const
+	{
+		return Vector<T>(x - v.x, y - v.y, z - v.z);
 	}
 
-	Vector& operator-=(const Vector &v) {
+	Vector<T> &operator-=(Vector<T> const &v)
+	{
 		x -= v.x, y -= v.y, z -= v.z;
 		return *this;
 	}
 
-	const Vector operator*(const Vector &v) const {
-		return Vector(
+	Vector<T> operator*(Vector<T> const &v) const
+	{
+		return Vector<T>(
 				y * v.z - z * v.y,
 				z * v.x - x * v.z,
 				x * v.y - y * v.x);
 	}
 
-	Vector& operator*=(const Vector &v) {
-		float 	xt = y * v.z - z * v.y,
-				yt = z * v.x - x * v.z,
-				zt = x * v.y - y * v.x;
+	Vector<T> &operator*=(Vector<T> const &v)
+	{
+		T 	xt = y * v.z - z * v.y,
+			yt = z * v.x - x * v.z,
+			zt = x * v.y - y * v.x;
 		x = xt, y = yt, z = zt;
 		return *this;
 	}
 
-	Vector& operator*=(float k) {
+	Vector<T> &operator*=(T k)
+	{
 		x *= k, y *= k, z *= k;
 		return *this;
 	}
 
-	Vector& operator*=(const class Matrix &m);
+	Vector<T> &operator*=(Matrix<T> const &m)
+	{
+		*this = *this * m;
+		return *this;
+	}
 
-	friend const Vector operator*(float k, const Vector &v) {
-		return Vector(v.x * k, v.y * k, v.z * k);
+	friend Vector<T> const operator*(T k, Vector<T> const &v)
+	{
+		return Vector<T>(v.x * k, v.y * k, v.z * k);
+	}
+
+	friend std::ostream &operator<<(std::ostream &out, Vector<T> const &v)
+	{
+		out << "(" << v.x << "," << v.y << "," << v.z << ")";
+		return out;
 	}
 };
 
+typedef Vector<float> Vectorf;
+typedef Vector<double> Vectord;
+
+template<typename T>
+class Point : Vector<T>
+{
+public:
+	Point()
+	{
+		this->w = Vector<T>::N1;
+	}
+
+	Point(T _x, T _y, T _z) :
+		Vector<T>(_x, _y, _z, Vector<T>::N1) {}
+
+	void set(T _x, T _y, T _z, T _w = Vector<T>::N1)
+	{
+		this->x = _x, this->y = _y, this->z = _z, this->w = _w;
+	}
+
+	Point<T> &operator=(const Point<T> &p)
+	{
+		this->x = p.x, this->y = p.y, this->z = p.z, this->w = Vector<T>::N1;
+		return *this;
+	}
+};
+
+template<typename T>
 class Matrix
 {
 private:
-	float _data[4][4];
+	T _data[4][4];
+
+	static constexpr T N0 = floating_point_type_properties<T>::zero;
+	static constexpr T N1 = floating_point_type_properties<T>::one;
 
 public:
 	Matrix() { memset(_data, 0, sizeof(_data)); }
-	Matrix(	float a1, float a2, float a3, float a4,
-			float b1, float b2, float b3, float b4,
-			float c1, float c2, float c3, float c4,
-			float d1, float d2, float d3, float d4)
+	Matrix(	T a1, T a2, T a3, T a4,
+			T b1, T b2, T b3, T b4,
+			T c1, T c2, T c3, T c4,
+			T d1, T d2, T d3, T d4)
 	{
 		_data[0][0] = a1, _data[0][1] = a2, _data[0][2] = a3, _data[0][3] = a4;
 		_data[1][0] = b1, _data[1][1] = b2, _data[1][2] = b3, _data[1][3] = b4;
@@ -258,215 +391,279 @@ public:
 		_data[3][0] = d1, _data[3][1] = d2, _data[3][2] = d3, _data[3][3] = d4;
 	}
 
-	void inverse();
-	void inverse(const Matrix &m);
-
-	inline float *raw() const {
-		return (float *)_data;
+	void inverse()
+	{
+		inverse(*this);
 	}
 
-	inline void transpose() {
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j <= i; j++) {
+	void inverse(Matrix<T> const &m)
+	{
+		T factor[6];
+		Matrix cof;
+		cof.transpose(m);
+
+		factor[0] = cof(2,2) * cof(3,3) - cof(2,3) * cof(3,2);
+		factor[1] = cof(2,1) * cof(3,3) - cof(2,3) * cof(3,1);
+		factor[2] = cof(2,1) * cof(3,2) - cof(2,2) * cof(3,1);
+		factor[3] = cof(2,0) * cof(3,3) - cof(2,3) * cof(3,0);
+		factor[4] = cof(2,2) * cof(3,0) - cof(2,0) * cof(3,2);
+		factor[5] = cof(2,0) * cof(3,1) - cof(2,1) * cof(3,0);
+
+		_data[0][0]	 = cof(1,1) * factor[0] - cof(1,2) * factor[1] + cof(1,3) * factor[2];
+		_data[0][1]  = -cof(1,0) * factor[0] + cof(1,2) * factor[3] + cof(1,3) * factor[4];
+		_data[0][2]  = cof(1,0) * factor[1] - cof(1,1) * factor[3] + cof(1,3) * factor[5];
+		_data[0][3]  = -cof(1,0) * factor[2] - cof(1,1) * factor[4] - cof(1,2) * factor[5];
+
+		_data[1][0]  = -cof(0,1) * factor[0] + cof(0,2) * factor[1] - cof(0,3) * factor[2];
+		_data[1][1]  = cof(0,0) * factor[0] - cof(0,2) * factor[3] - cof(0,3) * factor[4];
+		_data[1][2]  = -cof(0,0) * factor[1] + cof(0,1) * factor[3] - cof(0,3) * factor[5];
+		_data[1][3]  = cof(0,0) * factor[2] + cof(0,1) * factor[4] + cof(0,2) * factor[5];
+
+		factor[0] = cof(0,2) * cof(1,3) - cof(0,3) * cof(1,2);
+		factor[1] = cof(0,1) * cof(1,3) - cof(0,3) * cof(1,1);
+		factor[2] = cof(0,1) * cof(1,2) - cof(0,2) * cof(1,1);
+		factor[3] = cof(0,0) * cof(1,3) - cof(0,3) * cof(1,0);
+		factor[4] = cof(0,2) * cof(1,0) - cof(0,0) * cof(1,2);
+		factor[5] = cof(0,0) * cof(1,1) - cof(0,1) * cof(1,0);
+
+		_data[2][0]	 = factor[0] * cof(3,1) - factor[1] * cof(3,2) + factor[2] * cof(3,3);
+		_data[2][1]  = -factor[0] * cof(3,0) + factor[3] * cof(3,2) + factor[4] * cof(3,3);
+		_data[2][2]  = factor[1] * cof(3,0) - factor[3] * cof(3,1) + factor[5] * cof(3,3);
+		_data[2][3]  = -factor[2] * cof(3,0) - factor[4] * cof(3,1) - factor[5] * cof(3,2);
+
+		_data[3][0]  = -factor[0] * cof(2,1) + factor[1] * cof(2,2) - factor[2] * cof(2,3);
+		_data[3][1]  = factor[0] * cof(2,0) - factor[3] * cof(2,2) - factor[4] * cof(2,3);
+		_data[3][2]  = -factor[1] * cof(2,0) + factor[3] * cof(2,1) - factor[5] * cof(2,3);
+		_data[3][3]  = factor[2] * cof(2,0) + factor[4] * cof(2,1) + factor[5] * cof(2,2);
+
+		float inv_det = 1.0f / (
+			_data[0][0] * cof(0,0) +
+			_data[0][1] * cof(0,1) +
+			_data[0][2] * cof(0,2) +
+			_data[0][3] * cof(0,3));
+		*this *= inv_det;
+		return ;
+	}
+
+	T *raw() const
+	{
+		return (T *)_data;
+	}
+
+	void transpose()
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < i; j++)
 				std::swap(_data[i][j], _data[j][i]);
-			}
-		}
 	}
 
-	inline void transpose(const Matrix &m) {
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
+	void transpose(const Matrix<T> &m)
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
 				_data[i][j] = m(j, i);
-			}
-		}
 	}
 
-	float &operator()(unsigned int i, unsigned int j) {
-		if(i >= 4 || j >= 4) {
-			std::cerr << "Matrix subscript (" << i << "," << j <<
-					") out of range, return (0,0) as default." << std::endl;
-			return _data[0][0];
-		}
+	T &operator()(size_t i, size_t j)
+	{
+		assert(i < 4 && j < 4);
 		return _data[i][j];
 	}
 
-	const float operator()(unsigned int i, unsigned int j) const {
-		if(i >= 4 || j >= 4) {
-			std::cerr << "Matrix subscript (" << i << "," << j <<
-					") out of range, return (0,0) as default." << std::endl;
-			return _data[0][0];
-		}
+	T operator()(size_t i, size_t j) const
+	{
+		assert(i < 4 && j < 4);
 		return _data[i][j];
 	}
 
-	bool operator==(const Matrix &m) const {
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
-				if(!FLOAT_EQUAL(_data[i][j], m._data[i][j]))
+	bool operator==(Matrix<T> const &m) const
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				if(!Vector<T>::_equal(_data[i][j], m._data[i][j]))
 					return false;
-			}
-		}
+
 		return true;
 	}
-	bool operator!=(const Matrix &m) const {
+
+	bool operator!=(Matrix<T> const &m) const
+	{
 		return !(*this == m);
 	}
 
-	Matrix &operator=(const Matrix &m) {
-		if(this == &m) return *this;
+	Matrix<T> &operator=(Matrix<T> const &m)
+	{
+		if(this == &m)
+			return *this;
 		memcpy(_data, m._data, sizeof(_data));
 		return *this;
 	}
 
-	const Matrix operator+(const Matrix &m) const {
-		Matrix rm;
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
+	Matrix<T> operator+(Matrix<T> const &m) const
+	{
+		Matrix<T> rm;
+
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
 				rm(i, j) = _data[i][j] + m(i, j);
-			}
-		}
+
 		return rm;
 	}
 
-	Matrix &operator+=(const Matrix &m) {
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
+	Matrix<T> &operator+=(Matrix<T> const &m)
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
 				_data[i][j] += m(i, j);
-			}
-		}
+
 		return *this;
 	}
 
-	const Matrix operator*(float f) const {
-		Matrix rm;
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
+	Matrix<T> operator*(T f) const
+	{
+		Matrix<T> rm;
+
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
 				rm(i, j) = _data[i][j] * f;
-			}
-		}
+
 		return rm;
 	}
 
-	Matrix &operator*=(float f) {
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
+	Matrix<T> &operator*=(T f)
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
 				_data[i][j] *= f;
-			}
-		}
+
 		return *this;
 	}
 
-	const Matrix operator*(const Matrix &m) const {
-		Matrix rm;
-		for(int i = 0; i < 4; i++) {
-			for(int j = 0; j < 4; j++) {
-				for(int k = 0; k < 4; k++) {
+	Matrix<T> operator*(Matrix<T> const &m) const
+	{
+		Matrix<T> rm;
+
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				for(int k = 0; k < 4; k++)
 					rm(i, j) += _data[i][k] * m(k, j);
-				}
-			}
-		}
+
 		return rm;
 	}
 
-	Matrix &operator*=(const Matrix &m) {
-		Matrix rm = *this;
-		for(int i = 0; i < 4; i++) {
+	Matrix<T> &operator*=(Matrix<T> const &m)
+	{
+		Matrix<T> rm = *this;
+
+		for(int i = 0; i < 4; i++)
 			for(int j = 0; j < 4; j++) {
 				_data[i][j] = 0;
-				for(int k = 0; k < 4; k++) {
+				for(int k = 0; k < 4; k++)
 					_data[i][j] += rm(i, k) * m(k, j);
-				}
 			}
-		}
+
 		return *this;
 	}
 
-	friend const Vector operator*(const Vector &v, const Matrix &m) {
-		Vector rv(
-				m(0,0) * v.x + m(0,1) * v.y + m(0,2) * v.z + m(0,3) * v.w,
-				m(1,0) * v.x + m(1,1) * v.y + m(1,2) * v.z + m(1,3) * v.w,
-				m(2,0) * v.x + m(2,1) * v.y + m(2,2) * v.z + m(2,3) * v.w,
-				m(3,0) * v.x + m(3,1) * v.y + m(3,2) * v.z + m(3,3) * v.w);
-		if(!FLOAT_ZERO(rv.w)) {
-			rv.x /= rv.w, rv.y /= rv.w, rv.z /= rv.w;
-		}
-		rv.w = 1.0f;
+	friend Vector<T> const operator*(Vector<T> const &v, Matrix<T> const &m)
+	{
+		Vector<T> rv(
+			m(0,0) * v.x + m(0,1) * v.y + m(0,2) * v.z + m(0,3) * v.w,
+			m(1,0) * v.x + m(1,1) * v.y + m(1,2) * v.z + m(1,3) * v.w,
+			m(2,0) * v.x + m(2,1) * v.y + m(2,2) * v.z + m(2,3) * v.w,
+			m(3,0) * v.x + m(3,1) * v.y + m(3,2) * v.z + m(3,3) * v.w);
+
 		return rv;
 	}
 
-	static const Matrix buildIdentityMatrix() {
-		return Matrix(
-				1.0f,	0.0f,	0.0f,	0.0f,
-				0.0f,	1.0f,	0.0f,	0.0f,
-				0.0f,	0.0f,	1.0f,	0.0f,
-				0.0f,	0.0f,	0.0f,	1.0f);
+	static Matrix<T> buildIdentityMatrix()
+	{
+
+		return Matrix<T>(
+			N1,	N0,	N0,	N0,
+			N0,	N1,	N0,	N0,
+			N0,	N0,	N1,	N0,
+			N0,	N0,	N0,	N1);
 	}
 
-	static const Matrix buildScalingMatrix(float s) {
-		return Matrix(
-				s,		0.0f,	0.0f,	0.0f,
-				0.0f,	s,		0.0f,	0.0f,
-				0.0f,	0.0f,	s,		0.0f,
-				0.0f,	0.0f,	0.0f,	1.0f);
+	static Matrix<T> buildScalingMatrix(T s)
+	{
+		return Matrix<T>(
+			s,	N0,	N0,	N0,
+			N0,	s,	N0,	N0,
+			N0,	N0,	s,	N0,
+			N0,	N0,	N0,	N1);
 	}
 
-	static const Matrix buildTranslationMatrix(float dx, float dy, float dz) {
-		return Matrix(
-				1.0f,	0.0f,	0.0f,	dx,
-				0.0f,	1.0f,	0.0f,	dy,
-				0.0f,	0.0f,	1.0f,	dz,
-				0.0f,	0.0f,	0.0f,	1.0f);
+	static Matrix<T> buildTranslationMatrix(
+		T dx, T dy, T dz)
+	{
+		return Matrix<T>(
+			N1,	N0,	N0,	dx,
+			N0,	N1,	N0,	dy,
+			N0,	N0,	N1,	dz,
+			N0,	N0,	N0,	N1);
 	}
 
-	static const Matrix buildRotationMatrixAroundX(float radius) {
-		float fc = cosf(radius), fs = sinf(radius);
-		return Matrix(
-				1.0f,	0.0f, 	0.0f,	0.0f,
-				0.0f,	fc, 	fs, 	0.0f,
-				0.0f, 	-fs, 	fc, 	0.0f,
-				0.0f, 	0.0f,	0.0f, 	1.0f);
+	static Matrix<T> buildRotationMatrixAroundX(T radius)
+	{
+		T fc = cos(radius), fs = sin(radius);
+		return Matrix<T>(
+			N1,	N0, N0,	N0,
+			N0,	fc, fs, N0,
+			N0, -fs, fc, N0,
+			N0, N0,	N0, N1);
 	}
 
-	static const Matrix buildRotationMatrixAroundY(float radius) {
-		float fc = cosf(radius), fs = sinf(radius);
-		return Matrix(
-				fc,		0.0f,	-fs,	0.0f,
-				0.0f,	1.0f,	0.0f,	0.0f,
-				fs,		0.0f,	fc,		0.0f,
-				0.0f,	0.0f,	0.0f,	1.0f);
+	static Matrix<T> buildRotationMatrixAroundY(T radius)
+	{
+		T fc = cos(radius), fs = sin(radius);
+		return Matrix<T>(
+			fc,	N0,	-fs,N0,
+			N0,	N1,	N0,	N0,
+			fs,	N0,	fc,	N0,
+			N0,	N0,	N0,	N1);
 	}
 
-	static const Matrix buildRotationMatrixAroundZ(float radius) {
-		float fc = cosf(radius), fs = sinf(radius);
-		return Matrix(
-				fc,		fs,		0.0f,	0.0f,
-				-fs,	fc,		0.0f,	0.0f,
-				0.0f,	0.0f,	1.0f,	0.0f,
-				0.0f,	0.0f,	0.0f,	1.0f);
+	static Matrix<T> buildRotationMatrixAroundZ(T radius)
+	{
+		T fc = cos(radius), fs = sin(radius);
+		return Matrix<T>(
+			fc,	fs,	N0,	N0,
+			-fs,fc,	N0,	N0,
+			N0,	N0,	N1,	N0,
+			N0,	N0,	N0,	N1);
 	}
 
-	static const Matrix buildRotationMatrix(const Vector &v, float radius) {
-		float fc = cosf(radius), fs = sinf(radius), d = 1.0f - fc;
-		float xfs = v.x * fs, yfs = v.y * fs, zfs = v.z * fs;
+	static const Matrix<T> buildRotationMatrix(
+		const Vector<T> &v, T radius)
+	{
+		T fc = cos(radius), fs = sin(radius), d = N1 - fc;
+		T xfs = v.x * fs, yfs = v.y * fs, zfs = v.z * fs;
 
-		return Matrix(
-				v.x * v.x * d + fc,		v.x * v.y * d + zfs,	v.x * v.z * d - yfs,	0.0f,
-				v.y * v.x * d - zfs,	v.y * v.y * d + fc,		v.y * v.z * d + xfs,	0.0f,
-				v.z * v.x * d + yfs,	v.z * v.y * d - xfs,	v.z * v.z * d + fc,		0.0f,
-				0.0f,					0.0f,					0.0f,					1.0f);
+		return Matrix<T>(
+			v.x * v.x * d + fc,	v.x * v.y * d + zfs,v.x * v.z * d - yfs,N0,
+			v.y * v.x * d - zfs,v.y * v.y * d + fc,	v.y * v.z * d + xfs,N0,
+			v.z * v.x * d + yfs,v.z * v.y * d - xfs,v.z * v.z * d + fc,	N0,
+			N0,					N0,					N0,				N1);
 		/*
 				 *	x*x*d+cos(a)	x*y*d-z*sin(a)	x*z*d+y*sin(a)	0
 				 *	y*x*d+z*sin(a)	y*y*d+cos(a)	y*z*d-x*sin(a)	0
 				 *	z*x*d-y*sin(a)	z*y*d+x*sin(a)	z*z*d+cos(a)	0 */
 	}
 
-	void apply() const {
-		glMultTransposeMatrixf((const float *)_data);
+	void apply() const
+	{
+		glMultTransposeMatrixf(raw());
 	}
 
-	void applyExclusively() const {
-		glLoadTransposeMatrixf((const float *)_data);
+	void applyExclusively() const
+	{
+		glLoadTransposeMatrixf(raw());
 	}
 };
+
+typedef Matrix<float> Matrixf;
+typedef Matrix<double> Matrixd;
 
 #endif // __BASETYPE_H__

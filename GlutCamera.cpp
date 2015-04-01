@@ -9,13 +9,13 @@ GlutCamera::GlutCamera()
 	  _up(0.0f, 1.0f, 0.0f, 0.0f),
 	  _right(1.0f, 0.0f, 0.0f, 0.0f),
 	  _loc(0.0f, 0.0f, 0.0f, 0.0f),
-	  _transform(Matrix::buildIdentityMatrix()),
+	  _transform(Matrixf::buildIdentityMatrix()),
 	  _renew(false)
 {
 	_transform(2,2) = -1.0f;
 };
 
-void GlutCamera::lookAt(Vector eye, Vector at, Vector up)
+void GlutCamera::lookAt(Vectorf eye, Vectorf at, Vectorf up)
 {
 	_loc = eye;
 	_forward = at - eye;

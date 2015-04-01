@@ -22,7 +22,9 @@ public:
 	virtual void onInit() {};
 	virtual void onIdle() {};
 	virtual void onResize(int width, int height);
+	virtual void onPreRender() {};
 	virtual void onRender(unsigned int timeElapsed) = 0;
+	virtual void onPostRender() {};
 	virtual void onMouseButtonDown(MouseButton b, int x, int y) {};
 	virtual void onMouseButtonUp(MouseButton b, int x, int y) {};
 	virtual void onMouseMove(int x, int y) {};
